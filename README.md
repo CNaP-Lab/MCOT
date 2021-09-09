@@ -9,16 +9,14 @@ John C. Williams, MS, Philip N. Tubiolo, BE, Jacob R. Luceno, BS, and Jared X. V
 
 Cognitive Neuroscience and Psychosis (CNaP) Lab / Multi-Modal Translational Imaging (MMTI) Lab
 
-Department of Psychiatry and Behavioral Health, Renaissance School of Medicine at Stony Brook University
-
-Stony Brook, NY, USA.
+Department of Psychiatry and Behavioral Health, Renaissance School of Medicine at Stony Brook University, Stony Brook, NY, USA.
 
 
 This software allows a user to get optimal LPF-FD and GEV-DV volume censoring parameters for a specified multiband resting-state fMRI dataset.
 
 This was created with MATLAB 2021a and tested using MATLAB R2020a and R2021a.  
 
-This software requires SPM12 to be on the user path. SPM12 is included as part of this package. It can be obtained externally at https://www.fil.ion.ucl.ac.uk/spm/software/spm12/
+This software requires SPM12 to be on the user path. SPM12 is included as part of this package. It can be obtained externally at https://www.fil.ion.ucl.ac.uk/spm/software/spm12/ .
 
 NOTE TO USER:
 --------------
