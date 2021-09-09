@@ -2,11 +2,17 @@
 Multiband Censoring Optimization Tool (MCOT) for Resting-State Functional Connectivity Analyses
 
 This is a MATLAB software package to accompany the article:
+
 Advancing motion denoising of multiband resting-state functional connectivity fMRI data
+
 John C. Williams, MS, Philip N. Tubiolo, BE, Jacob R. Luceno, BS, and Jared X. Van Snellenberg, PhD.
+
 Cognitive Neuroscience and Psychosis (CNaP) Lab / Multi-Modal Translational Imaging (MMTI) Lab
+
 Department of Psychiatry and Behavioral Health, Renaissance School of Medicine at Stony Brook University
+
 Stony Brook, NY, USA.
+
 
 This software allows a user to get optimal LPF-FD and GEV-DV volume censoring parameters for a specified multiband resting-state fMRI dataset.
 
