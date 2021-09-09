@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="1472034445" file="C:\Users\Phil\Desktop\CNAP_Lab\Repos\ThresholdOptimizer_Take3\ThresholdOptimizer\MCOT.prj" location="C:\Users\Phil\Desktop\CNAP_Lab\Repos\ThresholdOptimizer_Take3\ThresholdOptimizer" name="MCOT" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="3271766235" file="C:\Users\Phil\Desktop\CNAP_Lab\Repos\MCOT\MCOT.prj" location="C:\Users\Phil\Desktop\CNAP_Lab\Repos\MCOT" name="MCOT" target="target.mlapps" target-name="Package App">
     <param.appname>MCOT</param.appname>
     <param.authnamewatermark>Cognitive Neuroscience and Psychosis Lab</param.authnamewatermark>
     <param.email>john.williams@stonybrookmedicine.edu</param.email>
@@ -12,8 +12,8 @@
     </param.icons>
     <param.summary>This application allows a user to estimate optimal volume censoring parameters for a multiband resting-state fMRI dataset.</param.summary>
     <param.description>This application allows a user to estimate optimal volume censoring parameters for a multiband resting-state fMRI dataset.</param.description>
-    <param.screenshot>C:\Users\Phil\AppData\Local\Temp\tp2ea028c5_87ba_4c16_9036_519444db56a9.png</param.screenshot>
-    <param.version>1.0</param.version>
+    <param.screenshot>C:\Users\Phil\AppData\Local\Temp\tpe2e16b1d_166e_4f90_abe3_b289e9da97c0.png</param.screenshot>
+    <param.version>0.2.1</param.version>
     <param.products.name />
     <param.products.id />
     <param.products.version />
@@ -23,7 +23,6 @@
     <param.output>${PROJECT_ROOT}</param.output>
     <param.guid>e49ecee4-7382-4383-b058-aaa478f700f8</param.guid>
     <unset>
-      <param.version />
       <param.products.name />
       <param.products.id />
       <param.products.version />
@@ -375,7 +374,7 @@
     <fileset.resources />
     <fileset.package />
     <build-deliverables>
-      <file location="C:\Users\Phil\Desktop\CNAP_Lab\Repos\ThresholdOptimizer_Take3" name="ThresholdOptimizer" optional="false">C:\Users\Phil\Desktop\CNAP_Lab\Repos\ThresholdOptimizer_Take3\ThresholdOptimizer</file>
+      <file location="C:\Users\Phil\Desktop\CNAP_Lab\Repos" name="MCOT" optional="false">C:\Users\Phil\Desktop\CNAP_Lab\Repos\MCOT</file>
     </build-deliverables>
     <workflow />
     <matlab>
