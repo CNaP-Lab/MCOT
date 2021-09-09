@@ -47,10 +47,11 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
                 % version in the working directory
                 if ~alreadySlicedPower
                     [path, name, ext] = fileparts(which('power264ROIs.nii'));
-                    
-                    if ~copyfile([path filesep name ext], [workingDir filesep 'InternalData' filesep name ext])
-                        threshOptLog([workingDir filesep 'Logs' filesep 'log.txt' ], 'Unable to copy ROI Template to working directory');
-                        error('Unable to copy ROI Template to working directory')
+                    if ~exist([workingDir filesep 'InternalData' filesep name ext], 'file')
+                        if ~copyfile([path filesep name ext], [workingDir filesep 'InternalData' filesep name ext])
+                            threshOptLog([workingDir filesep 'Logs' filesep 'log.txt' ], 'Unable to copy ROI Template to working directory');
+                            error('Unable to copy ROI Template to working directory')
+                        end
                     end
                     
                     resliceJob{1}.spm.spatial.coreg.write.ref = {[thisFileName ',1']};
@@ -148,6 +149,17 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             
             
             %%
+            bmIdxs = isnan(Bm);
+            Bm(bmIdxs) = 0;
+            
+            wmIdxs = isnan(WMm);
+            WMm(wmIdxs) = 0;
+            
+            CsfIdxs = isnan(CSFm);
+            CSFm(CsfIdxs) = 0;
+            
+            roiIdxs = isnan(Mask);
+            Mask(roiIdxs) = 0;
             
             roidat = reshape(Mask,[],1);
             mastermask = logical(roidat) | Bm(:) | WMm(:) | CSFm(:); % Gm(:) |

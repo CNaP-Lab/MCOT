@@ -27,6 +27,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
 
     pathToDefaults = which('mcotDefaults.mat');
     load(pathToDefaults, 'filterCutoffs','format','minSecDataNeeded', 'nTrim', 'numOfSecToTrim','useGSR');
+    imageSpace = '';
     
     
     continueBool = false;
@@ -61,6 +62,8 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                 filterCutoffs = varargin{curArg + 1};
             case "sectrimpostbpf"
                 numOfSecToTrim = varargin{curArg + 1};
+            case "imagespace"
+                imageSpace = varargin{curArg + 1};
             otherwise
                 error("Unrecognized input argument")
         end
@@ -105,6 +108,8 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                         filterCutoffs = varargin{curArg + 1};
                     case "sectrimpostbpf"
                         numOfSecToTrim = varargin{curArg + 1};
+                    case "imagespace"
+                        imageSpace = varargin{curArg + 1};
                     otherwise
                         error("Unrecognized input argument")
                 end
@@ -127,7 +132,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         %% Parse supported directory structures to automatically calc filenames, masks, and MPs
         
         if ~strcmp(format, 'custom')
-            [filenameMatrix, maskMatrix, MPs] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir);
+            [filenameMatrix, maskMatrix, MPs] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir, imageSpace);
             disp('Files parsed')
         end
         
