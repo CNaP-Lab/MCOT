@@ -11,20 +11,25 @@ Cognitive Neuroscience and Psychosis (CNaP) Lab / Multi-Modal Translational Imag
 
 Department of Psychiatry and Behavioral Health, Renaissance School of Medicine at Stony Brook University, Stony Brook, NY, USA.
 
-
+INTRODUCTION:
+--------------
 This software allows a user to get optimal LPF-FD and GEV-DV volume censoring parameters for a specified multiband resting-state fMRI dataset.
 
 This was created with MATLAB 2021a and tested using MATLAB R2020a and R2021a.  
 
 This software requires SPM12 to be on the user path. SPM12 is included as part of this package. It can be obtained externally at https://www.fil.ion.ucl.ac.uk/spm/software/spm12/ .
 
+Additionally, a set of command line MATLAB tools for performing LPF-FD and GEV-DV volume censoring on fMRI data is provided in the folder, Multiband_fMRI_Volume_Censoring_Toolkit.  See Multiband_fMRI_Volume_Censoring_Toolkit/readme.pdf for instructions for how to use these functions. 
+
 NOTE TO USER:
 --------------
 This software may be run using the provided MATLAB Application (installed from MCOT.mlappinstall) or from the MATLAB command window (by running mCotWrapper with the necessary input arguments detailed below) Use of the MATLAB application to run this software will produce identical results to running the software from the MATLAB command window. Tooltips are provided within the application to ensure that the user is guided through providing all necessary arguments.
 
+Functions comprising the toolkit (Multiband_fMRI_Volume_Censoring_Toolkit) can be run directly from the command window in MATLAB.
+
 Installation of this software for use in the MATLAB command window consists of downloading, copying, or moving all functions into a directory accessable to your MATLAB installation. If downloaded as a zip file, all functions should be unzipped to a single folder before use. Unzipping this software is expected to take less than one minute on a normal desktop computer.
 
-Installation of the MATLAB application associated with this software consists of downloading and running MCOT.mlappinstall, which will install the application into the "My Apps" tray of the MATLAB editor.
+The MCOT graphical user interface (GUI) is enabled by running the file, MCOT.mlappinstall, which will install the application into the "My Apps" tray of the MATLAB editor. The GUI can then be run by clicking on the MCOT icon in "My Apps."
 
 ------------------------------------------------------------------------------------------
 mCotWrapper
