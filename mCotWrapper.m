@@ -160,6 +160,15 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         disp('Loaded subjExtractedTimeSeries.mat')
     end
     
+    %% Checker
+    % Cleans up subjextractedtimeseries to remove all NaN or 0 runs, saves
+    % memory too
+    % warns the user that this is happening, and saves it to some log file
+    %     inside function?  Something like this disp(['WARNING: Removed xx ROIs from run # ' num2str(j) of subj yy' due to all 0s or all NaNs in an ROI time series.']);
+    % User needs to know:
+    %   When an ROI time series hs all 0s or NaNs, and whether the run is
+    %   kept (run is only removed if all ROIs are all 0/NaN).
+    
     
     
     %% Parameter sweep

@@ -32,8 +32,12 @@ function [ROIpairCorr,numFramesRemaining,numFramesScrubbed,totalNumFrames] = get
             disp(err);
             ROIpairCorr = NaN(numROIpairs,1); %If partialcorr breaks, return NaN
         end
-        fixvec = ROIpairCorr(:) ~= 0;
-        ROIpairCorr = ROIpairCorr(fixvec);
+        keepElements = tril(true(size(ROIpairCorr)),-1);
+        ROIpairCorr = ROIpairCorr(:);
+        keepElements = keepElements(:);
+        ROIpairCorr = ROIpairCorr(keepElements);
+        ROIpairNoData = ROIpairCorr(:) == 0;
+        ROIpairCorr(ROIpairNoData) = NaN;
         ROIpairCorr = rToZ(ROIpairCorr);
     end
 end

@@ -77,9 +77,7 @@ function [averageRscr,averageRandomRscr,totalNumFramesRemaining,totalNumFrames, 
             run_random_rscrMatrix = nan(numROIpairs,numRandomPerms);
             runNumFramesRemaining = 0;
             runNumFramesScrubbed = 0;
-            totalRunNumFrames(j) = 0;
-            disp(['WARNING: Removed run # ' num2str(j) ' due to all 0s or all NaNs in an ROI time series.']);
-            
+            totalRunNumFrames(j) = 0;            
         else
             % Adding this: if any ROI time series are all 0's, replace
             % those 0s with NaNs.
