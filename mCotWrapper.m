@@ -116,7 +116,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
             end
             continueBool = true;
         catch
-            threshOptLog([workingDir filesep 'Logs' filsep 'log.txt'],'Tried to continue from previous run but no data found.');
+            threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'],'Tried to continue from previous run but no data found.');
             error('Tried to continue from previous run but no data found.')
         end
     else
@@ -153,7 +153,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
 
         subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskMatrix, workingDir, continueBool, filterCutoffs);
         subjExtractedCompleted = true;
-        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-nocompression');
+        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-v7.3', '-nocompression');
         disp('Filtering completed. ROI Time Series calculated.')
     else
         load([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'], 'subjExtractedTimeSeries');
@@ -176,7 +176,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = mseParameterSweep(subjExtractedTimeSeries,useGSR,parameterSweepFileName, TR, continueBool, numOfSecToTrim, minSecDataNeeded);
         paramSweepCompleted = true;
         save([workingDir filesep 'InternalData' filesep 'paramSweepReturns.mat'], 'totalNumFrames','targetedVariance','targetedRs','randomRs','FDcutoffs','gevDVcutoffs', 'totalNumFramesRemaining', '-v7.3', '-nocompression');
-        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'paramSweepCompleted', '-append', '-nocompression');
+        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'paramSweepCompleted', '-append','-v7.3', '-nocompression');
         disp('Parameter sweep completed')
     else
         load([workingDir filesep 'InternalData' filesep 'paramSweepReturns.mat']);
@@ -188,7 +188,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         maxBias = maxBiasCalculation(totalNumFramesRemaining,totalNumFrames,targetedRs,randomRs);
         maxBiasCompleted = true;
         save([workingDir filesep 'InternalData' filesep 'maxBias.mat'], 'maxBias', '-v7.3', '-nocompression');
-        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'maxBiasCompleted', '-append','-nocompression'); %Always save current step AFTER saving data
+        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'maxBiasCompleted', '-append','-v7.3','-nocompression'); %Always save current step AFTER saving data
         disp('Max bias calculation completed')
     else
         load([workingDir filesep 'InternalData' filesep 'maxBias.mat']);
