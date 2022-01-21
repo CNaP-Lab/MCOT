@@ -1,4 +1,4 @@
-function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskFilenameMatrix, workingDir, continueBool, filterCutoffs)
+function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskFilenameMatrix, workingDir, continueBool, filterCutoffs, subjIds)
     
     % To Continue from a crashed attempt
     performFirstTimeWork = true;
@@ -81,6 +81,7 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
         
         %% Assemble Struct ----- NaN Fill based on longest data
         for i = 1:length(subjExtractedTimeSeries)
+            subjExtractedTimeSeries(i).subjId = subjIds{i};
             subjExtractedTimeSeries(i).CS = nan(maxLength, 1, maxRuns);
             subjExtractedTimeSeries(i).GS = nan(maxLength, 1, maxRuns);
             subjExtractedTimeSeries(i).WS = nan(maxLength, 1, maxRuns);
