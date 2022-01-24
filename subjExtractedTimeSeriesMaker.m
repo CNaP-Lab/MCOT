@@ -34,6 +34,7 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             %establish number of runs variable
             subjExtractedTimeSeries(i).numRuns = 0;
             %for each run
+            runIdx = 1;
             for j = 1:size(filenameMatrix,2)
                 
                 thisFileName = filenameMatrix{i,j};
@@ -42,6 +43,10 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
                     subjExtractedTimeSeries(i).runLength(j, 1) = nan;
                     continue;
                 end
+                
+                [~,runName,~] = fileparts(thisFileName);
+                subjExtractedTimeSeries(i).runName{runIdx} = runName;
+                runIdx = runIdx + 1;
                 
                 % This block reslices the template and saves the resliced
                 % version in the working directory
