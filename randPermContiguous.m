@@ -1,5 +1,9 @@
 function [permutedVector] = randPermContiguous(inputVector)
-
+    %Generates a random permutation of a binary vector, maintaining sizes of clusters of 1's.
+    %That is, if the input vector is [ 0 1 1 1 0 0 1 1 0 1 0 0 0 0 0 0 0 0 0 ...], 
+    %the output will have one cluster of three 1's, one cluster of two 1's,
+    %and one cluser of one 1, all in random locations, and not directly
+    %adjacent to one another.
     
     if(~isrow(inputVector))
         inputVector = inputVector';

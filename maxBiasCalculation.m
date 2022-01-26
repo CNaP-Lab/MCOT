@@ -1,5 +1,6 @@
 function [maxBias] = maxBiasCalculation(totalNumFramesRemaining,totalNumFrames,targetedRs,randomRs)
-  
+    %Calculation of maximum bias per Section 2.3.2.4
+    
     keepSubj = totalNumFramesRemaining(1,:) > 0;
     
     subjTotalNumFrames = sum(totalNumFrames(:,keepSubj),2);
@@ -11,7 +12,7 @@ function [maxBias] = maxBiasCalculation(totalNumFramesRemaining,totalNumFrames,t
     percentFramesRemoved = 100.*numFramesRemoved./subjTotalNumFrames;
     interpPct = 0:0.01:100;
     [uniquePct, uniqueIndex] = unique(percentFramesRemoved);
-    uniqueROIpairR = abs(meanRinROIpair(:,uniqueIndex)); 
+    uniqueROIpairR = meanRinROIpair(:,uniqueIndex); 
     notIsNaN = ~any(isnan(uniqueROIpairR));
     uniquePctNoNaN = uniquePct(notIsNaN);
     interpPctWithinRange = interpPct( (interpPct >= min(uniquePctNoNaN)) & (interpPct <= max(uniquePctNoNaN)) );

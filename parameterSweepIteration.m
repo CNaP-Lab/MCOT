@@ -1,6 +1,8 @@
 function [targetedSubjRinROIpair,randomSubjRinROIpair,totalNumFramesRemaining,totalNumFrames, ...
         meanSamplingVar,meanRunsVar,harmMeanFrames,harmMeanRuns,meanRunsNoSamplingVar,harmMeanFramesMinus3] ...
         = parameterSweepIteration(FDcutoff,gevDVcutoff,useGSR,rawCutoff,useFDgev,useDVgev,TR,numROIpairs,SETS, numOfSecToTrim, minSecDataNeeded)
+    %A single iteration (set of parameter values) for a volume censoring
+    %parameter sweep.
     
     numSubjects = length(SETS);
     

@@ -2,6 +2,16 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
     
+    filepath = fileparts(mfilename('fullpath'));
+    dirsToPath = {'spm12', ...
+        'MCOT_resources', ...
+        'Multiband_fMRI_Volume_Censoring_Toolkit'};
+    addpath(filepath);
+    for i = 1:length(dirsToPath)
+        dirToAdd = fullfile(filepath,dirsToPath{i});
+        addpath(dirToAdd);
+    end
+    
     %% Create the working directory file heirarchy.
     
     if ~exist(workingDir, 'dir')
@@ -24,7 +34,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
     
     
     %% Argument decoding and Variable Instantiation
-
+    
     pathToDefaults = which('mcotDefaults.mat');
     load(pathToDefaults, 'filterCutoffs','format','minSecDataNeeded', 'nTrim', 'numOfSecToTrim','useGSR');
     imageSpace = '';
@@ -128,7 +138,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
     end
     
     if ~subjExtractedCompleted
-
+        
         %% Parse supported directory structures to automatically calc filenames, masks, and MPs
         
         if ~strcmp(format, 'custom')
@@ -139,8 +149,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         
         
         %% Validate Provided Files
-        
-        if ~fileValidator(filenameMatrix, maskMatrix)
+       if ~fileValidator(filenameMatrix, maskMatrix)
             threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], 'Filename or Mask Files could not be validated.  Make sure all files provided are nifti format, uncompressed, and accessible to the current user');
             error('Filename or Mask Files could not be validated.  Make sure all files provided are nifti format, uncompressed, and accessible to the current user')
         end
@@ -150,11 +159,16 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         
         
         %% SubjExtractedTimeSeries
-
+        
         subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskMatrix, workingDir, continueBool, filterCutoffs, subjIds);
-        subjExtractedCompleted = true;
         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-v7.3', '-nocompression');
         disp('Filtering completed. ROI Time Series calculated.')
+        
+        framwiseMotionVectorOutputDir = fullfile(workingDir,'Outputs','Framewise_Motion_Vectors');
+        save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutputDir);
+        disp(['Saved LPF-FD, GEVDV, and filtered MPs in: ' framwiseMotionVectorOutputDir]); drawnow;
+        
+        subjExtractedCompleted = true;
     else
         load([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'], 'subjExtractedTimeSeries');
         disp('Loaded subjExtractedTimeSeries.mat')

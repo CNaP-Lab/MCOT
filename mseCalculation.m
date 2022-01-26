@@ -1,4 +1,5 @@
 function [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining, pathToInternalDataFolder)
+    %Calculation of delta MSE-RSFC per Section 2.3.2
     
     subjTotalNumFrames = sum(totalNumFrames,2);
     framesRemaining = sum(totalNumFramesRemaining,2);
@@ -16,7 +17,6 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,tot
     uniqueGEVDVcutoffs = gevDVcutoffs(uniqueIndex);
     
     % Changing check for any NaNs to check for all NaNs
-    %notIsNaN = ~any(isnan(uniqueROIpairR));
     notIsNaN = ~all(isnan(uniqueROIpairR));
     uniquePctNoNaN = uniquePct(notIsNaN);
     uniqueMeanVarRnoNaN = uniqueMeanVarR(:,notIsNaN);
@@ -26,7 +26,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,tot
     uniqueROIpairRnoNaN = uniqueROIpairR(:,notIsNaN);
     
     squaredMaxBias = maxBias.^2; %Col vector
-    deltaSquaredBias = abs(maxBias.^2 - (maxBias - uniqueROIpairRnoNaN).^2); %Note col is ROI pair, row is percent
+    deltaSquaredBias = maxBias.^2 - (maxBias - uniqueROIpairRnoNaN).^2; %Note col is ROI pair, row is percent
 
     initialNumSubjects = max(uniqueNumSubjectsRemainingNoNaN);
     
@@ -36,7 +36,6 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,tot
     delta_MSEoverN = newMSEoverN - originalMSEoverN;
     
     % Changing mean to nanmean
-    %mean_deltaMSE_overN = mean(delta_MSEoverN,1);
     mean_deltaMSE_overN = nanmean(delta_MSEoverN,1);
 
 
