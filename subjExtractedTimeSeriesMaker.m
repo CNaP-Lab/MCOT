@@ -17,7 +17,7 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
     if performFirstTimeWork  % To create a new subjExtractedTimeSeries struct
         
         if exist([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'], 'file')
-            delete([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat']);
+            movefile([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'],[workingDir filesep 'InternalData' filesep 'old_unused_subjExtractedTimeSeries.mat']);
         end
         
         subjStartItr = 1;

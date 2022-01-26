@@ -15,7 +15,7 @@ function [] = save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutpu
         lpfFD = thisSubj.lpfFD;
         lpfDV = thisSubj.lpfDV;
         fMPs = thisSubj.fMPs;
-        numRuns = size(lpfFD,3);
+        numRuns = subjExtractedTimeSeries(i).numRuns;
         lpfFDdir = fullfile(subjDirectory,'LPF_FD');
         lpfDVdir = fullfile(subjDirectory,'LPF_DV');
         fMPsDir = fullfile(subjDirectory,'Filtered_MPs');
@@ -29,7 +29,8 @@ function [] = save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutpu
             mkdir(fMPsDir); pause(eps); drawnow;
         end
         for j = 1:numRuns
-            runString = ['run_' num2str(j) '.csv'];
+            runName = subjExtractedTimeSeries(1).runName{j};
+            runString = [runName '.csv'];
             lpfFDfile = fullfile(lpfFDdir,['LPF_FD_' runString]);
             lpfDVfile = fullfile(lpfDVdir,['LPF_DV_' runString]);
             fMPsfile = fullfile(fMPsDir,['fMPs_' runString]);

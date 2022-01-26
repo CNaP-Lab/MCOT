@@ -43,40 +43,50 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
     continueBool = false;
     parameterSweepFileName = [workingDir filesep 'InternalData' filesep 'paramSweep.mat'];
     
-    
-    for curArg = 1:2:length(varargin)
-        switch(lower(string(varargin{curArg})))
+    numArgIn = length(varargin);
+    currentArgNumber = 1;
+    while (currentArgNumber <= numArgIn)
+        lowerStringCurrentArg = lower(string(varargin{currentArgNumber}));
+        isNameValuePair = true;
+        switch(lowerStringCurrentArg)
             case "motionparameters"
-                MPs = varargin{curArg + 1};
+                MPs = varargin{currentArgNumber + 1};
             case "tr"
-                TR = varargin{curArg + 1};
+                TR = varargin{currentArgNumber + 1};
             case "filenamematrix"
-                filenameMatrix = varargin{curArg + 1};
+                filenameMatrix = varargin{currentArgNumber + 1};
             case "maskmatrix"
-                maskMatrix = varargin{curArg + 1};
+                maskMatrix = varargin{currentArgNumber + 1};
             case "usegsr"
-                useGSR = varargin{curArg + 1};
+                useGSR = varargin{currentArgNumber + 1};
             case "ntrim"
-                nTrim = varargin{curArg + 1};
+                nTrim = varargin{currentArgNumber + 1};
             case "format"
-                format = varargin{curArg + 1};
+                format = varargin{currentArgNumber + 1};
             case "continue"
                 continueBool = true;
+                isNameValuePair = false;
             case "sourcedirectory"
-                sourceDir = varargin{curArg + 1};
+                sourceDir = varargin{currentArgNumber + 1};
             case "runnames"
-                rsfcTaskNames = varargin{curArg + 1};
+                rsfcTaskNames = varargin{currentArgNumber + 1};
             case "minimumsecondsdataperrun"
-                minSecDataNeeded = varargin{curArg + 1};
+                minSecDataNeeded = varargin{currentArgNumber + 1};
             case "filtercutoffs"
-                filterCutoffs = varargin{curArg + 1};
+                filterCutoffs = varargin{currentArgNumber + 1};
             case "sectrimpostbpf"
-                numOfSecToTrim = varargin{curArg + 1};
+                numOfSecToTrim = varargin{currentArgNumber + 1};
             case "imagespace"
-                imageSpace = varargin{curArg + 1};
+                imageSpace = varargin{currentArgNumber + 1};
             otherwise
                 error("Unrecognized input argument")
         end
+        if (isNameValuePair)
+            numToAdd = 2;
+        else
+            numToAdd = 1;
+        end
+        currentArgNumber = currentArgNumber + numToAdd;
     end
     
     disp('Read all arguments')
@@ -87,42 +97,57 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
     
     if continueBool
         try
-            load([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', 'paramSweepCompleted', 'maxBiasCompleted');
-            load([workingDir filesep 'InternalData' filesep 'inputFlags.mat'], 'varargin');
+            loadedCurrentStepData = load([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', 'paramSweepCompleted', 'maxBiasCompleted');
+            subjExtractedCompleted = loadedCurrentStepData.subjExtractedCompleted;
+            paramSweepCompleted = loadedCurrentStepData.paramSweepCompleted;
+            maxBiasCompleted = loadedCurrentStepData.maxBiasCompleted;
+            loadedInternalData = load([workingDir filesep 'InternalData' filesep 'inputFlags.mat'], 'varargin');
+            varargin = loadedInternalData.varargin;
             % Reparse input values from previous run
-            for curArg = 1:2:length(varargin)
-                switch(lower(string(varargin{curArg})))
+            numArgIn = length(varargin);
+            currentArgNumber = 1;
+            while (currentArgNumber <= numArgIn)
+                lowerStringCurrentArg = lower(string(varargin{currentArgNumber}));
+                isNameValuePair = true;
+                switch(lowerStringCurrentArg)
                     case "motionparameters"
-                        MPs = varargin{curArg + 1};
+                        MPs = varargin{currentArgNumber + 1};
                     case "tr"
-                        TR = varargin{curArg + 1};
+                        TR = varargin{currentArgNumber + 1};
                     case "filenamematrix"
-                        filenameMatrix = varargin{curArg + 1};
+                        filenameMatrix = varargin{currentArgNumber + 1};
                     case "maskmatrix"
-                        maskMatrix = varargin{curArg + 1};
+                        maskMatrix = varargin{currentArgNumber + 1};
                     case "usegsr"
-                        useGSR = varargin{curArg + 1};
+                        useGSR = varargin{currentArgNumber + 1};
                     case "ntrim"
-                        nTrim = varargin{curArg + 1};
+                        nTrim = varargin{currentArgNumber + 1};
                     case "format"
-                        format = varargin{curArg + 1};
+                        format = varargin{currentArgNumber + 1};
                     case "continue"
                         continueBool = true;
+                        isNameValuePair = false;
                     case "sourcedirectory"
-                        sourceDir = varargin{curArg + 1};
+                        sourceDir = varargin{currentArgNumber + 1};
                     case "runnames"
-                        rsfcTaskNames = varargin{curArg + 1};
+                        rsfcTaskNames = varargin{currentArgNumber + 1};
                     case "minimumsecondsdataperrun"
-                        minSecDataNeeded = varargin{curArg + 1};
+                        minSecDataNeeded = varargin{currentArgNumber + 1};
                     case "filtercutoffs"
-                        filterCutoffs = varargin{curArg + 1};
+                        filterCutoffs = varargin{currentArgNumber + 1};
                     case "sectrimpostbpf"
-                        numOfSecToTrim = varargin{curArg + 1};
+                        numOfSecToTrim = varargin{currentArgNumber + 1};
                     case "imagespace"
-                        imageSpace = varargin{curArg + 1};
+                        imageSpace = varargin{currentArgNumber + 1};
                     otherwise
                         error("Unrecognized input argument")
                 end
+                if (isNameValuePair)
+                    numToAdd = 2;
+                else
+                    numToAdd = 1;
+                end
+                currentArgNumber = currentArgNumber + numToAdd;
             end
             continueBool = true;
         catch
@@ -137,6 +162,17 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', 'paramSweepCompleted', 'maxBiasCompleted', '-v7.3', '-nocompression');
     end
     
+    if subjExtractedCompleted
+        try
+            subjExtractedCompleted = false;
+            load([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'], 'subjExtractedTimeSeries');
+            subjExtractedCompleted = true;
+            disp('Loaded subjExtractedTimeSeries.mat')
+        catch err
+            disp('Could not load subjExtractedTimeSeries.mat. Regenerating instead.');
+        end
+    end
+    
     if ~subjExtractedCompleted
         
         %% Parse supported directory structures to automatically calc filenames, masks, and MPs
@@ -149,7 +185,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         
         
         %% Validate Provided Files
-       if ~fileValidator(filenameMatrix, maskMatrix)
+        if ~fileValidator(filenameMatrix, maskMatrix)
             threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], 'Filename or Mask Files could not be validated.  Make sure all files provided are nifti format, uncompressed, and accessible to the current user');
             error('Filename or Mask Files could not be validated.  Make sure all files provided are nifti format, uncompressed, and accessible to the current user')
         end
@@ -169,9 +205,6 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         disp(['Saved LPF-FD, GEVDV, and filtered MPs in: ' framwiseMotionVectorOutputDir]); drawnow;
         
         subjExtractedCompleted = true;
-    else
-        load([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'], 'subjExtractedTimeSeries');
-        disp('Loaded subjExtractedTimeSeries.mat')
     end
     
     %% Checker
