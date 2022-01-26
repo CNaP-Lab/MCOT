@@ -132,7 +132,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         %% Parse supported directory structures to automatically calc filenames, masks, and MPs
         
         if ~strcmp(format, 'custom')
-            [filenameMatrix, maskMatrix, MPs] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir, imageSpace);
+            [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir, imageSpace);
             disp('Files parsed')
         end
         
@@ -151,7 +151,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         
         %% SubjExtractedTimeSeries
 
-        subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskMatrix, workingDir, continueBool, filterCutoffs);
+        subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskMatrix, workingDir, continueBool, filterCutoffs, subjIds);
         subjExtractedCompleted = true;
         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-v7.3', '-nocompression');
         disp('Filtering completed. ROI Time Series calculated.')

@@ -1,4 +1,4 @@
-function [filenameMatrix, maskMatrix, MPs] = filenameParser(parentFolder,inputFormat, rsfcTaskNames, outputFolder, varargin)
+function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolder,inputFormat, rsfcTaskNames, outputFolder, varargin)
     % Depending on inputFormat, rsfcTaskNames can be a single name (in the case
     % of fmriprep) or an enumerated list in the case of HCP
     
@@ -11,6 +11,7 @@ function [filenameMatrix, maskMatrix, MPs] = filenameParser(parentFolder,inputFo
         end
         rsfcTaskNames = rsfcStrings;
     end
+    
     
     
     %Set Study Directory
@@ -27,9 +28,10 @@ function [filenameMatrix, maskMatrix, MPs] = filenameParser(parentFolder,inputFo
         rsfcTaskNames = char(rsfcTaskNames);
         
         filenameMatrix = cell(length(studyDirectory), 1);
+        subjIds = cell(length(studyDirectory), 1);
         for i = 1:length(studyDirectory)
             thisSubjFold = studyDirectory(i).name;
-            
+            subjIds{i} = studyDirectory(i).name;
             % ---- Intialize Mask Finding variables -----
             brainMaskFound = false;
             brainMaskFile = '';
@@ -205,9 +207,11 @@ function [filenameMatrix, maskMatrix, MPs] = filenameParser(parentFolder,inputFo
         %preallocate filename/MP matrix to dimensions of subject x runs
         filenameMatrix = cell(length(studyDirectory), length(rsfcTaskNames));
         MPs = cell(length(studyDirectory), length(rsfcTaskNames));
+        subjIds = cell(length(studyDirectory), 1);
         %each subj
         for i = 1:length(studyDirectory)
             thisSubjFold = studyDirectory(i).name;
+            subjIds{i} = studyDirectory(i).name;
             %if the subject has a results folder (which it should in HCP
             %format)...
             if exist([parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'Results'],'dir')
