@@ -47,7 +47,7 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                     pdir = dir([parentFolder filesep thisSubjFold filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-aparcaseg_dseg.nii*']);
                     if ~isempty(pdir)
                         % if its zipped, unzip to tmp working folder...
-                        if contains(pdir(1).name, {'.gz', '.GZ'})
+                        if contains(lower(pdir(1).name), '.gz')
                             zippedFile = [parentFolder filesep thisSubjFold filesep 'func' filesep pdir(1).name];
                             newFolderPath = strrep(zippedFile, parentFolder, outputFolder);
                             unzippedFile = strrep(newFolderPath, '.gz', '');
@@ -99,7 +99,7 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                             pdir = dir([parentFolder filesep thisSubjFold filesep sesDirs(j).name filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-aparcaseg_dseg.nii*']);
                             if ~isempty(pdir)
                                 % if its zipped, unzip to tmp working folder...
-                                if contains(pdir(1).name, {'.gz', '.GZ'})
+                                if contains(lower(pdir(1).name), '.gz')
                                     zippedFile = [parentFolder filesep thisSubjFold filesep sesDirs(j).name filesep 'func' filesep pdir(1).name];
                                     newFolderPath = strrep(zippedFile, parentFolder, outputFolder);
                                     unzippedFile = strrep(newFolderPath, '.gz', '');
@@ -149,7 +149,7 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                 pdir = dir([parentFolder filesep thisSubjFold filesep 'anat' filesep 'sub-*_space-' fmriPrepSpace '_desc-brain_mask.nii*']);
                 if ~isempty(pdir)
                     % if its zipped, unzip to tmp working folder...
-                    if contains(pdir(1).name, {'.gz', '.GZ'})
+                    if contains(lower(pdir(1).name), '.gz')
                         zippedFile = [parentFolder filesep thisSubjFold filesep 'anat' filesep pdir(1).name];
                         newFolderPath = strrep(zippedFile, parentFolder, outputFolder);
                         unzippedFile = strrep(newFolderPath, '.gz', '');
@@ -232,7 +232,7 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                         bmdir = dir([resultsDir filesep char(rsfcTaskNames(j)) filesep 'brainmask_fs.2.nii*']);
                         if ~isempty(bmdir)
                             % if its zipped, unzip to tmp working folder...
-                            if contains(bmdir(1).name, {'.gz', '.GZ'})
+                            if contains(lower(bmdir(1).name), '.gz')
                                 newFolderPath = strrep([resultsDir filesep char(rsfcTaskNames(j))], parentFolder, outputFolder);
                                 if ~exist([newFolderPath filesep 'brainmask_fs.2.nii'], 'file')
                                     gunzip([resultsDir filesep char(rsfcTaskNames(j)) filesep 'brainmask_fs.2.nii.gz'], newFolderPath);
@@ -263,7 +263,7 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                     if ~parcelMaskFound
                         parcelDir = dir([parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'ROIs' filesep 'Atlas_wmparc.2.nii*']);
                         if ~isempty(parcelDir)
-                            if contains(parcelDir(1).name, {'.gz', '.GZ'})
+                            if contains(lower(parcelDir(1).name), '.gz')
                                 newFolderPath = strrep([parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'ROIs'], parentFolder, outputFolder);
                                 if ~exist([newFolderPath filesep 'Atlas_wmparc.2.nii'], 'file')
                                     gunzip([parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'ROIs' filesep 'Atlas_wmparc.2.nii.gz'], newFolderPath);
