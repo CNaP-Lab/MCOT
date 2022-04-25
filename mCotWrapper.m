@@ -76,6 +76,8 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                 filterCutoffs = varargin{currentArgNumber + 1};
             case "sectrimpostbpf"
                 numOfSecToTrim = varargin{currentArgNumber + 1};
+            case "fixflag"
+                fixflag = varargin{currentArgNumber + 1};
             case "imagespace"
                 imageSpace = varargin{currentArgNumber + 1};
             otherwise
@@ -137,6 +139,8 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                         filterCutoffs = varargin{currentArgNumber + 1};
                     case "sectrimpostbpf"
                         numOfSecToTrim = varargin{currentArgNumber + 1};
+                    case "fixflag"
+                        fixflag = varargin{currentArgNumber + 1};
                     case "imagespace"
                         imageSpace = varargin{currentArgNumber + 1};
                     otherwise
@@ -178,7 +182,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         %% Parse supported directory structures to automatically calc filenames, masks, and MPs
         
         if ~strcmp(format, 'custom')
-            [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir, imageSpace);
+            [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir, imageSpace, fixflag);
             disp('Files parsed')
         end
         
@@ -192,63 +196,91 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         
         disp('Files validated')
         
+     %%   
         
+%         %% SubjExtractedTimeSeries this section is to be parallelized/modified as shown below this section -neil
+%         
+%         subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskMatrix, workingDir, continueBool, filterCutoffs, subjIds);
+%         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-v7.3', '-nocompression');
+%         disp('Filtering completed. ROI Time Series calculated.')
+%         
+%         framwiseMotionVectorOutputDir = fullfile(workingDir,'Outputs','Framewise_Motion_Vectors');
+%         save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutputDir);
+%         disp(['Saved LPF-FD, GEVDV, and filtered MPs in: ' framwiseMotionVectorOutputDir]); drawnow;
+%         
+%         subjExtractedCompleted = true;
         
-        %% SubjExtractedTimeSeries
+        %% my new section -neil
         
-        subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskMatrix, workingDir, continueBool, filterCutoffs, subjIds);
-        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-v7.3', '-nocompression');
-        disp('Filtering completed. ROI Time Series calculated.')
+%      load('before_mysection.mat');
+     
+     framwiseMotionVectorOutputDir = fullfile(workingDir,'Outputs','Framewise_Motion_Vectors');
+     parfor i=1:length(subjIds)
+         try
+            subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix(i,:), TR, nTrim, MPs(i,:), maskMatrix(i,:), workingDir, continueBool, filterCutoffs, subjIds(i));
+            aa=[workingDir filesep 'InternalData' filesep 'currentStep.mat'];
+            bb=[workingDir filesep 'InternalData' filesep 'currentStep' cell2mat(subjIds(i)) '.mat'];
+            copyfile_parfor(aa,bb);
+%             copyfile aa bb;
+            parsave([workingDir filesep 'InternalData' filesep 'currentStep' cell2mat(subjIds(i)) '.mat'], 'subjExtractedCompleted');
+            save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutputDir);
+         catch err
+         disp(['error detected in following iteration:' num2str(i)]);
+         disp(['subjId in error:' cell2mat(subjIds(i))]);
+         disp(err)
+        end
+     end
+
+     disp('Filtering completed. ROI Time Series calculated.')
         
-        framwiseMotionVectorOutputDir = fullfile(workingDir,'Outputs','Framewise_Motion_Vectors');
-        save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutputDir);
-        disp(['Saved LPF-FD, GEVDV, and filtered MPs in: ' framwiseMotionVectorOutputDir]); drawnow;
+     disp(['Saved LPF-FD, GEVDV, and filtered MPs in: ' framwiseMotionVectorOutputDir]); drawnow;
         
-        subjExtractedCompleted = true;
+     subjExtractedCompleted = true;
+        
     end
     
-    %% Checker
-    % Cleans up subjextractedtimeseries to remove all NaN or 0 runs, saves
-    % memory too
-    % warns the user that this is happening, and saves it to some log file
-    %     inside function?  Something like this disp(['WARNING: Removed xx ROIs from run # ' num2str(j) of subj yy' due to all 0s or all NaNs in an ROI time series.']);
-    % User needs to know:
-    %   When an ROI time series hs all 0s or NaNs, and whether the run is
-    %   kept (run is only removed if all ROIs are all 0/NaN).
-    
-    
-    
-    %% Parameter sweep
-    if ~paramSweepCompleted
-        [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = mseParameterSweep(subjExtractedTimeSeries,useGSR,parameterSweepFileName, TR, continueBool, numOfSecToTrim, minSecDataNeeded);
-        paramSweepCompleted = true;
-        save([workingDir filesep 'InternalData' filesep 'paramSweepReturns.mat'], 'totalNumFrames','targetedVariance','targetedRs','randomRs','FDcutoffs','gevDVcutoffs', 'totalNumFramesRemaining', '-v7.3', '-nocompression');
-        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'paramSweepCompleted', '-append','-v7.3', '-nocompression');
-        disp('Parameter sweep completed')
-    else
-        load([workingDir filesep 'InternalData' filesep 'paramSweepReturns.mat']);
-        disp('Loaded paramSweepReturns.mat')
-    end
-    
-    %% Max bias calculation
-    if ~(maxBiasCompleted && paramSweepCompleted)
-        maxBias = maxBiasCalculation(totalNumFramesRemaining,totalNumFrames,targetedRs,randomRs);
-        maxBiasCompleted = true;
-        save([workingDir filesep 'InternalData' filesep 'maxBias.mat'], 'maxBias', '-v7.3', '-nocompression');
-        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'maxBiasCompleted', '-append','-v7.3','-nocompression'); %Always save current step AFTER saving data
-        disp('Max bias calculation completed')
-    else
-        load([workingDir filesep 'InternalData' filesep 'maxBias.mat']);
-        disp('Loaded maxBias.mat')
-    end
-    
-    %% MSE calculation and MSE optimum
-    [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining,[workingDir filesep 'InternalData']);
-    
-    disp('MSE calculation completed. saving outputs')
-    
-    save([workingDir filesep 'Outputs' filesep 'Outputs.mat'], 'optimalDV', 'optimalFD', 'optimalPCT', 'minMSE','-v7.3','-nocompression');
-    disp('outputs saved - returning')
+%     %% Checker
+%     % Cleans up subjextractedtimeseries to remove all NaN or 0 runs, saves
+%     % memory too
+%     % warns the user that this is happening, and saves it to some log file
+%     %     inside function?  Something like this disp(['WARNING: Removed xx ROIs from run # ' num2str(j) of subj yy' due to all 0s or all NaNs in an ROI time series.']);
+%     % User needs to know:
+%     %   When an ROI time series hs all 0s or NaNs, and whether the run is
+%     %   kept (run is only removed if all ROIs are all 0/NaN).
+%     
+%     
+%     
+%     %% Parameter sweep
+%     if ~paramSweepCompleted
+%         [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = mseParameterSweep(subjExtractedTimeSeries,useGSR,parameterSweepFileName, TR, continueBool, numOfSecToTrim, minSecDataNeeded);
+%         paramSweepCompleted = true;
+%         save([workingDir filesep 'InternalData' filesep 'paramSweepReturns.mat'], 'totalNumFrames','targetedVariance','targetedRs','randomRs','FDcutoffs','gevDVcutoffs', 'totalNumFramesRemaining', '-v7.3', '-nocompression');
+%         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'paramSweepCompleted', '-append','-v7.3', '-nocompression');
+%         disp('Parameter sweep completed')
+%     else
+%         load([workingDir filesep 'InternalData' filesep 'paramSweepReturns.mat']);
+%         disp('Loaded paramSweepReturns.mat')
+%     end
+%     
+%     %% Max bias calculation
+%     if ~(maxBiasCompleted && paramSweepCompleted)
+%         maxBias = maxBiasCalculation(totalNumFramesRemaining,totalNumFrames,targetedRs,randomRs);
+%         maxBiasCompleted = true;
+%         save([workingDir filesep 'InternalData' filesep 'maxBias.mat'], 'maxBias', '-v7.3', '-nocompression');
+%         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'maxBiasCompleted', '-append','-v7.3','-nocompression'); %Always save current step AFTER saving data
+%         disp('Max bias calculation completed')
+%     else
+%         load([workingDir filesep 'InternalData' filesep 'maxBias.mat']);
+%         disp('Loaded maxBias.mat')
+%     end
+%     
+%     %% MSE calculation and MSE optimum
+%     [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining,[workingDir filesep 'InternalData']);
+%     
+%     disp('MSE calculation completed. saving outputs')
+%     
+%     save([workingDir filesep 'Outputs' filesep 'Outputs.mat'], 'optimalDV', 'optimalFD', 'optimalPCT', 'minMSE','-v7.3','-nocompression');
+%     disp('outputs saved - returning')
     
 end
 

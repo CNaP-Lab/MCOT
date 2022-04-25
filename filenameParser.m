@@ -2,6 +2,8 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
     % Depending on inputFormat, rsfcTaskNames can be a single name (in the case
     % of fmriprep) or an enumerated list in the case of HCP
     
+    fixflag=varargin{2};
+    
     outputFolder = [outputFolder filesep 'InternalData'];
     
     %convert cell array to String Array
@@ -287,13 +289,24 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                         end
                     end
                     
-                    % grab the run.
-                    runDir = dir([resultsDir filesep char(rsfcTaskNames(j)) filesep char(rsfcTaskNames(j)) '.nii*']);
-                    if ~isempty(runDir)
-                        filenameMatrix{i, j} = [resultsDir filesep char(rsfcTaskNames(j)) filesep runDir(1).name];
-                        Mps = load([resultsDir filesep char(rsfcTaskNames(j)) filesep 'Movement_Regressors.txt']);
-                        MPs{i,j} = Mps(:,1:6);
+                    if fixflag==false
+                        % grab the run.
+                        runDir = dir([resultsDir filesep char(rsfcTaskNames(j)) filesep char(rsfcTaskNames(j)) '.nii*']);
+                    elseif fixflag==true
+                        runDir = dir([resultsDir filesep char(rsfcTaskNames(j)) filesep char(rsfcTaskNames(j)) 'hp2000_clean.nii*']);
+                    else
+                        runDir = dir([resultsDir filesep char(rsfcTaskNames(j)) filesep char(rsfcTaskNames(j)) '.nii*']); 
                     end
+                        
+          
+                        if ~isempty(runDir)
+                            filenameMatrix{i, j} = [resultsDir filesep char(rsfcTaskNames(j)) filesep runDir(1).name];
+                            Mps = load([resultsDir filesep char(rsfcTaskNames(j)) filesep 'Movement_Regressors.txt']);
+                            MPs{i,j} = Mps(:,1:6);
+                        end
+                    
+                        
+                    
                 end
             else
                 error(['no Results folder found for subject ' studyDirectory(i).name])

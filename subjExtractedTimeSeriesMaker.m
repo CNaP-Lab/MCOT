@@ -258,7 +258,9 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
                 error('Error calculating CSF Signal.')
             end
             
-            save([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'], 'i', 'j', 'subjExtractedTimeSeries', 'Mask', 'nTrim', '-v7.3', '-nocompression');
+            cell2mat(subjIds)
+            disp(['subjIds' cell2mat(subjIds)])
+            save([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries' cell2mat(subjIds) '.mat'], 'i', 'j', 'subjExtractedTimeSeries', 'Mask', 'nTrim', '-v7.3', '-nocompression');
             
             
             disp(['Subj ' num2str(i) ', Run ' num2str(j) ' completed'])
