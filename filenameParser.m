@@ -293,7 +293,7 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                         % grab the run.
                         runDir = dir([resultsDir filesep char(rsfcTaskNames(j)) filesep char(rsfcTaskNames(j)) '.nii*']);
                     elseif fixflag==true
-                        runDir = dir([resultsDir filesep char(rsfcTaskNames(j)) filesep char(rsfcTaskNames(j)) 'hp2000_clean.nii*']);
+                        runDir = dir([resultsDir filesep char(rsfcTaskNames(j)) filesep char(rsfcTaskNames(j)) '_hp2000_clean.nii*']);
                     else
                         runDir = dir([resultsDir filesep char(rsfcTaskNames(j)) filesep char(rsfcTaskNames(j)) '.nii*']); 
                     end
