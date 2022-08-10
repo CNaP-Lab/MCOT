@@ -66,7 +66,7 @@ function [averageRscr,averageRandomRscr,totalNumFramesRemaining,totalNumFrames, 
     for j = 1:numRuns
         pause(eps); drawnow;
         
-        % This is is going to be edited so that it only removes a run if ALL
+        % This is has been edited so that it only removes a run if ALL
         % ROI time series are all 0's, as opposed to if any time series are all 0's.
         %if( all(all(isnan(subjExtractedTimeSeries.rts(:,:,j)))) || ...
         %       any(all(subjExtractedTimeSeries.rts(:,:,j)==0,1)) ) %Check for any time series with NaNs or all 0's
@@ -95,7 +95,7 @@ function [averageRscr,averageRandomRscr,totalNumFramesRemaining,totalNumFrames, 
             runMedianFD(j) = nan; %median(subjExtractedTimeSeries.FD(:,:,j));
         end
         
-        % This is going to be edited so that it only removed a run is ALL
+        % This has been edited so that it only removed a run is ALL
         % ROI pair correlations are all NaNs, rather than any.
         if( all(isnan(runRscr)) )
             runRscr = nan(size(runRscr));

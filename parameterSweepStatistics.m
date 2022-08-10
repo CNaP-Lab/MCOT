@@ -1,4 +1,5 @@
 function [targetedVariance,targetedRs,randomRs] = parameterSweepStatistics(targetedSubjRinROIpair,randomSubjRinROIpair)
+    %Calculates statistics from parameter sweep.
     
     % Average Rs across subjects
     targetedRs = nanmean(targetedSubjRinROIpair,2);

@@ -17,7 +17,7 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
     if performFirstTimeWork  % To create a new subjExtractedTimeSeries struct
         
         if exist([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'], 'file')
-            delete([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat']);
+            movefile([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'],[workingDir filesep 'InternalData' filesep 'old_unused_subjExtractedTimeSeries.mat']);
         end
         
         subjStartItr = 1;
@@ -122,8 +122,9 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             WMm = logical(WMm);
             [~, CSFm] = readVol(maskFilenameMatrix{i, 3});
             CSFm = logical(CSFm);
-            
-            
+
+            WMm_eroded = erodemasks_MCOT(WMm);
+            CSFm_eroded = erodemasks_MCOT(CSFm);
             
             %% Load and Trim current run ---------------------------------------------------
             [~, vol4D] = readVol(thisFileName);
@@ -175,6 +176,8 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             Bm = Bm(mastermask);
             WMm = WMm(mastermask);
             CSFm = CSFm(mastermask);
+            WMm_eroded = WMm_eroded(mastermask);
+            CSFm_eroded = CSFm_eroded(mastermask);
             
             %%  Various filtering ----------------------------------------------------------------
             try
@@ -227,12 +230,14 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
                 threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], 'Error calculating ROI time series.')
                 error('Error calculating ROI time series.')
             end
-            
+
             GSt = mean(maskedFlat(Bm,:))'; %Global Signal; these are signals we want to have.
             %        GmSt = mean(maskedFlat(Gm,:))'; %gray matter signal
-            WSt = mean(maskedFlat(WMm,:))'; %white matter signal
-            CSt = mean(maskedFlat(CSFm,:))'; %CSF signal
-            
+            %             WSt = mean(maskedFlat(WMm,:))'; %white matter signal
+            %             CSt = mean(maskedFlat(CSFm,:))'; %CSF signal
+            WSt = mean(maskedFlat(WMm_eroded,:))'; %white matter signal
+            CSt = mean(maskedFlat(CSFm_eroded,:))'; %CSF signal
+
             try
                 GSt = GSt - (X*(X\GSt));
                 subjExtractedTimeSeries(i).GS(1:size(GSt, 1), :, j) = GSt;

@@ -49,6 +49,21 @@ mCotWrapper(workingDirectory,Name,Value) returns the optimal volume censoring pa
 mCotWrapper(workingDirectory,'continue') continues the optimization pipeline based on intermediate outputs found in workingDirectory. 
 
 ------------------------------------------------------------------------------------------
+Outputs Stored in 'workingDirectory/Outputs'
+------------------------------------------------------------------------------------------
+
+All outputs are saved in a folder 'Outputs' within the workingDirectory passed as the first input argument.
+
+'Outputs.mat'
+-------------
+This is a .mat file containing the output variables 'minMSE,' 'optimalPCT,' 'optimalFD,' and 'optimalPCT.'
+
+
+'Framewise_Motion_Vectors'
+---------------------------
+This directory contains run-wise .csv files with vectors of six filtered motion parameters (X, Y, Z, roll, pitch, yaw; Filtered_MPs), low-pass filtered DV (LPF_DV), and low-pass filtered FD (LPF_FD) for each subject of the study. Subjects are organized into their own subdirectories.
+
+------------------------------------------------------------------------------------------
 Input Arguments
 ------------------------------------------------------------------------------------------
 
@@ -57,7 +72,7 @@ workingDirectory
 Denotes directory in which to save all intermediate and final outputs. If this directory does not yet exist, it will be created.
 
 ------------------------------------------------------------------------------------------
-Name-Value Pairs
+Name-Value Pair Input Arguments
 ------------------------------------------------------------------------------------------
 
 'format'
@@ -164,8 +179,6 @@ An N x 3 cell array, where N is the number of subject. The first column is a ful
 
 An N x M cell array, where N is the number of subjects and M is the maximum number of runs per subejct. Each entry is a Y x 6 array, where Y is the number of volumes in each resting-state run and each column is a translational or rotational motion parameter. The order of these columns is: x-translation, y-translation, z-translation, roll, pitch, yaw.
 
-
-
 ------------------------------------------------------------------------------------------
 Output Arguments
 ------------------------------------------------------------------------------------------
@@ -191,7 +204,6 @@ The optimal LPF-FD volume censoring paramter corresponding to minMSE.
 'optimalPCT'
 ------------
 The percentage of volumes censored from the dataset at minMSE.
-
 
 ------------------------------------------------------------------------------------------
 Example Function Calls
