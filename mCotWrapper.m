@@ -78,6 +78,13 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                 numOfSecToTrim = varargin{currentArgNumber + 1};
             case "imagespace"
                 imageSpace = varargin{currentArgNumber + 1};
+                % edit on 11/28/22 by PNT: Allows for user to
+                % specify specific subj IDs to process from a larger
+                % study directory
+            case "subjids"
+                optionalSubjIDlist = varargin{currentArgNumber + 1};
+            case "badvolsfile" % path to eye closure file (PNT 11/28/22)
+                eyeClosureFile = varargin{currentArgNumber + 1};
             otherwise
                 error("Unrecognized input argument")
         end
@@ -139,6 +146,13 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                         numOfSecToTrim = varargin{currentArgNumber + 1};
                     case "imagespace"
                         imageSpace = varargin{currentArgNumber + 1};
+                    % edit on 11/28/22 by PNT: Allows for user to
+                    % specify specific subj IDs to process from a larger
+                    % study directory
+                    case "subjids"
+                        optionalSubjIDlist = varargin{currentArgNumber+1}; 
+                    case "badvolsfile" % path to eye closure file (PNT 11/28/22)
+                        eyeClosureFile = varargin{currentArgNumber + 1};
                     otherwise
                         error("Unrecognized input argument")
                 end
@@ -178,7 +192,11 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         %% Parse supported directory structures to automatically calc filenames, masks, and MPs
         
         if ~strcmp(format, 'custom')
-            [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir, imageSpace);
+            if exist('optionalSubjIDlist','var')
+                [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir, optionalSubjIDlist, imageSpace);
+            else
+                [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir, {}, imageSpace);
+            end
             disp('Files parsed')
         end
         
@@ -199,6 +217,15 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskMatrix, workingDir, continueBool, filterCutoffs, subjIds);
         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-v7.3', '-nocompression');
         disp('Filtering completed. ROI Time Series calculated.')
+        
+        
+        %% Bad Volumes set from Eye closures (PNT 11/28/22)
+        if exist('eyeClosureFile','var')
+            subjExtractedTimeSeries = getBadVols(eyeClosureFile,TR,subjExtractedTimeSeries);
+            disp('Bad Volumes Flagged.')
+        end
+        
+        
         
         framwiseMotionVectorOutputDir = fullfile(workingDir,'Outputs','Framewise_Motion_Vectors');
         save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutputDir);

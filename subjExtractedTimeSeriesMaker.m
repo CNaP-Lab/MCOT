@@ -9,7 +9,7 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             loadStruct = load([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'],'i','j');
             subjStartItr = loadStruct.i;
             runStartItr = loadStruct.j;
-            performFirstTimeWork = left;
+            performFirstTimeWork = false;
         catch
             performFirstTimeWork = true;
         end

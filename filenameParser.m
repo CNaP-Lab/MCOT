@@ -1,4 +1,4 @@
-function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolder,inputFormat, rsfcTaskNames, outputFolder, varargin)
+function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolder,inputFormat, rsfcTaskNames, outputFolder, OnlyTheseIDs, varargin)
     % Depending on inputFormat, rsfcTaskNames can be a single name (in the case
     % of fmriprep) or an enumerated list in the case of HCP
     
@@ -19,6 +19,22 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
     studyDirectory = studyDirectory(~ismember({studyDirectory.name},{'.','..'}));
     validFolders = [studyDirectory.isdir];
     studyDirectory = studyDirectory(validFolders);
+    
+    % edit on 11/28/22 by PNT: see if a subjIDlist was provided and filter
+    % the studyDirectory to only have those subjects
+    if ~isempty(OnlyTheseIDs)
+        SubjIdxs = [];
+        subjNames = {studyDirectory.name};
+        for idx = 1:length(OnlyTheseIDs)
+            foundSubj = find(strcmp(subjNames,OnlyTheseIDs{idx}));
+            if ~isempty(foundSubj)
+                SubjIdxs(end+1) = foundSubj;
+            end
+        end
+    end
+    
+    % filter studyDirectory
+    studyDirectory = studyDirectory(SubjIdxs);
     
     if strcmp(inputFormat, 'fMRIprep')
         
