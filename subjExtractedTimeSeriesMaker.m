@@ -140,8 +140,8 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             
             %% subjExtractedTimeSeries.Filters -----------------------------------------------
             if ~setFilters %only needed for first loop
-                lpb = 0.2./((1/TR)/2); %%%%%HARD CODED TO 0.2 Hz LOW PASS FILTER!!!
-                fpb = [filterCutoffs(1)./((1/TR)/2) filterCutoffs(2)./((1/TR)/2)];  %%%%%HARD CODED TO .009->0.08 Hz BANDPASS FILTER!!!
+                lpb = 0.2./((1/TR(i))/2); %%%%%HARD CODED TO 0.2 Hz LOW PASS FILTER!!!
+                fpb = [filterCutoffs(1)./((1/TR(i))/2) filterCutoffs(2)./((1/TR(i))/2)];  %%%%%HARD CODED TO .009->0.08 Hz BANDPASS FILTER!!!
                 [lB,lA] = butter(2,lpb,'low');
                 [fB,fA] = butter(2,fpb);
                 
@@ -181,7 +181,7 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             
             %%  Various filtering ----------------------------------------------------------------
             try
-                lpfFD = getLPFFD(MPs{i,j},TR);
+                lpfFD = getLPFFD(MPs{i,j},TR(i));
                 subjExtractedTimeSeries(i).lpfFD(1:size(lpfFD,1)-nTrim,1,j) = lpfFD(nTrim + 1:end, :);
             catch
                 threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], 'Error filtering FD.  Check MPs and TR.')
@@ -189,7 +189,7 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             end
             
             try
-                fMPs = getFilteredMPs(MPs{i,j},TR);
+                fMPs = getFilteredMPs(MPs{i,j},TR(i));
                 subjExtractedTimeSeries(i).fMPs(1:size(fMPs,1)-nTrim,1:size(fMPs,2),j) = fMPs(nTrim + 1:end, :);
             catch
                 threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], 'Error filtering MPs.  Check MPs and TR.')
@@ -197,7 +197,7 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             end
             
             try
-                lpfDV = getLPFdvars(vol4D, Bm, TR);
+                lpfDV = getLPFdvars(vol4D, Bm, TR(i));
                 subjExtractedTimeSeries(i).lpfDV(1:size(lpfDV,1)-nTrim,1,j) = lpfDV(nTrim + 1:end, :);
             catch
                 threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], 'Error filtering DVars.  Check masks and TR.')

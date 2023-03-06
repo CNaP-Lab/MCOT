@@ -28,9 +28,14 @@ function subjExtractedTimeSeries = getBadVols(eyeClosureFile,TR,subjExtractedTim
             
             thisRunNum = runNums(i);
             
+            
+            %neil added for TR - subjIds should theoretically be
+            %subjList_mx or optionalSubjIDlist or subjIds (outer->inner)
+            ii = find(strcmp({subjExtractedTimeSeries.subjId}, thisSubj));
+            
             % gets volume timings
             vtimes = 0:size(subjExtractedTimeSeries(thisSubjIdx).CS,1)-1;
-            vtimes = vtimes.*TR;
+            vtimes = vtimes.*TR(ii);
             
             thisTimeStamp = timeStamps{i};
             [t1,t2] = strtok(thisTimeStamp,'-');
@@ -41,7 +46,7 @@ function subjExtractedTimeSeries = getBadVols(eyeClosureFile,TR,subjExtractedTim
             t2 = str2num(tim)*60 + str2num(tis(2:end));
             
             % find bad indices in volume timings
-            badIndices = find(vtimes > t1-TR & t2+TR > vtimes);
+            badIndices = find(vtimes > t1-TR(ii) & t2+TR(ii) > vtimes);
             
             % set indices in badVols
             subjExtractedTimeSeries(thisSubjIdx).badVols(badIndices,:,thisRunNum) = true;

@@ -15,7 +15,7 @@ function [targetedVariance,targetedRs,randomRs] = parameterSweepStatistics(comba
 %     
 %     randomSubjRinROIpair_harmonized = combat(randomSubjRinROIpair, batch, mod, 0);
 
-    if combatstruct.flag=='true'
+    if combatstruct.flag==true
            targetedSubjRinROIpair = combat(targetedSubjRinROIpair, combatstruct.batch, combatstruct.mod, combatstruct.method);
     
            randomSubjRinROIpair = combat(randomSubjRinROIpair, combatstruct.batch, combatstruct.mod, combatstruct.method);
