@@ -3,7 +3,8 @@ sourceDir = '/mnt/jxvs2_02/HCP_Subject_Test';
 runnames = {'RSFC_fMRI_1','RSFC_fMRI_2','RSFC_fMRI_3','RSFC_fMRI_4', 'rfMRI_REST1_LR','rfMRI_REST1_RL','rfMRI_REST2_LR','rfMRI_REST2_RL'};
 badVolsFile = '/mnt/jxvs2_01/Thal_Loc_Data/RDoC_Analysis/EyeClosuresRS_JCW_2022-11-29.txt';
 filterCutoffs = [0.009 0.08];
-TR = 0.72;
+TR = [0.72 0.72 0.72 0.72 0.72];
+
 ntrim = 0;
 secTrimPostBPF = 22; %default
 minSecData = 60; %default
@@ -15,11 +16,11 @@ format = 'HCP';
 % age is continuous. sex is categorical, for example. 
 
 %set flag to true if using combat or false if not using combat. 
-combatstruct.flag='true';
+combatstruct.flag=false;
 
 combatstruct.batch = [1 1 1 2 2]; %Batch variable for the scanner id
 
-age=[32 23 42 23 69]; 
+age=[32 23 42 23 69]'; 
 
 sex = [1 2 1 2 1]'; % Categorical variable (1 for females, 2 for males)
 sex = dummyvar(sex);
@@ -39,8 +40,9 @@ combatstruct.method=1;
 
 %% mixed
 subjList_mx = {'50023','50026','50046','100307','211720'};
+
 workingDir_mx = '/mnt/jxvs2_02/neil/mcot_combat_stuff/wkdir';
-mCotWrapper(workingDir_mx,'sourcedirectory',sourceDir,'runnames',runnames,'filtercutoffs',filterCutoffs,...
+mCotWrapper(workingDir_mx,combatstruct,'sourcedirectory',sourceDir,'runnames',runnames,'filtercutoffs',filterCutoffs,...
     'tr',TR,'ntrim',ntrim,'sectrimpostbpf',secTrimPostBPF,'minimumsecondsdataperrun',minSecData,'usegsr',false,'badvolsfile',badVolsFile,...
     'subjids',subjList_mx,'format',format)
 
