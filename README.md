@@ -152,6 +152,39 @@ highHz = 0.08
 Specifies the number of seconds of data to remove from the beginning and end of each resting-state run after band-pass filtering is performed to mitigate filter edge effects.
 Default: 22
 
+'CombatStruct'
+-----------------
+(struct)
+Specifies the struct that is used for ComBat based harmonization of multi-site imaging data, based on the program: https://github.com/Jfortin1/ComBatHarmonization.
+
+If user is not using ComBat, combatstruct.flag should be set to false. 
+
+If user is using ComBat, combatstruct.flag should be set to true.
+In addition, three other properties of combatstruct need to be assigned: combatstruct.batch, combatstruct.mod, combatstruct.method. 
+
+combatstruct.batch is a numeric or character vector of length n where n corresponds to the number of subjects that exists in the data. It is use to indicate the site/scanner/study id assigned to each subject.  If you have 3 scanners, you assign each subject 1, 2, or 3 to represent the scanner used, for instance. 
+
+combatstruct. mod is a model matrix containing the outcome of interest and other biological covariates and is used when adjusting for biological variables to preserve biological variability while removing variability associated with site/scanner. If you're not adjusting for biological variables, it should be set as follows: combatstruct.mod=[].
+
+To account for biological factors, this model matrix is needed for fitting coefficients in a linear regression framework. This model matrix can be constructed using continuous variables as they are, but for categorical variables, a reference group must be excluded from the matrix for identification purposes, as the intercept is already included in the ComBat model.
+
+
+For example, suppose you have 3 biological covariates: age, sex (males or females, and disease (healthy, mci, or AD). 
+
+age[32 23 42 23 69]'; 
+
+sex = [1 2 1 2 1]'; % Categorical variable (1 for females, 2 for males)
+sex = dummyvar(sex);
+
+disease = {'ad'; 'healthy';'mci';'healthy';'mci'};
+disease = categorical(disease);
+disease = dummyvar(disease);
+
+ You would eventually set the matrix as follows, excluding one column to serve as the reference, for each variable representing categorical values:
+
+combatstruct.mod=[age sex(:,end) disease(:, 2:end)] 
+
+combatstruct.method is an int variable indicates the method of harmonization: parameteric adjustments (1) vs non-parametric adjustments (0).
 
 
 ------------The following arguments only need to be specified is 'format' = 'custom'------------

@@ -1,4 +1,4 @@
-function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir,combatstruct, varargin)
+function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
     
@@ -53,6 +53,8 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir,com
                 MPs = varargin{currentArgNumber + 1};
             case "tr"
                 TR = varargin{currentArgNumber + 1};
+            case "CombatStruct"
+                combatstruct = varargin{currentArgNumber + 1};
             case "filenamematrix"
                 filenameMatrix = varargin{currentArgNumber + 1};
             case "maskmatrix"
