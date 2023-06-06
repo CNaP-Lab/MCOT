@@ -1,4 +1,4 @@
-function [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = mseParameterSweep(subjExtractedTimeSeries,useGSR,parameterSweepFileName,TR,continueBool, numOfSecToTrim, minSecDataNeeded)
+function [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = mseParameterSweep(combatstruct,subjExtractedTimeSeries,useGSR,parameterSweepFileName,TR,continueBool, numOfSecToTrim, minSecDataNeeded)
     
     numROI = size(subjExtractedTimeSeries(1).rts,2);
     numROIpairs = nchoosek(numROI,2);
@@ -53,7 +53,7 @@ function [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcut
         PFR(loopCounter,:) = 100 .* proportionFramesRemoved;
         
         [targetedVariance(:,loopCounter),targetedRs(:,loopCounter),randomRs(:,loopCounter)] = ...
-            parameterSweepStatistics(targetedSubjRinROIpair,randomSubjRinROIpair);
+            parameterSweepStatistics(combatstruct,targetedSubjRinROIpair,randomSubjRinROIpair);
         
         toc; pause(eps); drawnow;
         if((loopCounter == 1) || ~(mod(loopCounter,1000)))

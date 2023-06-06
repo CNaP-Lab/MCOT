@@ -53,6 +53,8 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                 MPs = varargin{currentArgNumber + 1};
             case "tr"
                 TR = varargin{currentArgNumber + 1};
+            case "CombatStruct"
+                combatstruct = varargin{currentArgNumber + 1};
             case "filenamematrix"
                 filenameMatrix = varargin{currentArgNumber + 1};
             case "maskmatrix"
@@ -247,7 +249,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
     
     %% Parameter sweep
     if ~paramSweepCompleted
-        [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = mseParameterSweep(subjExtractedTimeSeries,useGSR,parameterSweepFileName, TR, continueBool, numOfSecToTrim, minSecDataNeeded);
+        [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = mseParameterSweep(combatstruct,subjExtractedTimeSeries,useGSR,parameterSweepFileName, TR, continueBool, numOfSecToTrim, minSecDataNeeded);
         paramSweepCompleted = true;
         save([workingDir filesep 'InternalData' filesep 'paramSweepReturns.mat'], 'totalNumFrames','targetedVariance','targetedRs','randomRs','FDcutoffs','gevDVcutoffs', 'totalNumFramesRemaining', '-v7.3', '-nocompression');
         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'paramSweepCompleted', '-append','-v7.3', '-nocompression');
