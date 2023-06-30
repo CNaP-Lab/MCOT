@@ -312,14 +312,17 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                     end
                 end
             else
-                error(['no Results folder found for subject ' studyDirectory(i).name])
+                str = ['no Results folder found for subject ' studyDirectory(i).name];
+                threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], str);
+                error(str);
             end
             
         end
         
     else
-        threshOpt
-        error('Unrecognized Format input to filenameParser')
+        str = 'Unrecognized Format input to filenameParser';
+        threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], str);
+        error(str)
     end
     
     
