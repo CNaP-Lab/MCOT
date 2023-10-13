@@ -1,4 +1,4 @@
-function [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining, pathToInternalDataFolder)
+function [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining, pathToInternalDataFolder,useGSR)
     %Calculation of delta MSE-RSFC per Section 2.3.2
     
     subjTotalNumFrames = sum(totalNumFrames,2);
@@ -55,6 +55,6 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,tot
     optimalPCT = plotPCT(minIndex);
     optimalDV = plotGEVDV(minIndex);
     
-    save([pathToInternalDataFolder filesep 'mseCalculationWorkspace.mat'], '-nocompression', '-v7.3');
+    save([pathToInternalDataFolder filesep 'mseCalculationWorkspace_GS' num2str(useGSR) '.mat'], '-nocompression', '-v7.3'); %JCW 09/27/2023
 end
 

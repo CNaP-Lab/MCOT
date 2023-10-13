@@ -1,5 +1,6 @@
 function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,random_rscrMatrix] = ...
         new_FDDV_ScrubAndFilter(rts,fMPs,GS,WS,CS,FDvector,FDgevCutoff,DVvector,DVgevCutoff,useFDgev,useDVgev,fA,fB,useGSR,numROIpairs,TR, numOfSecToTrim, minSecDataNeeded, ...
+        minNumContiguousDataSeconds, ...
         varargin)
 
     numOfVolumesToTrim = ceil(numOfSecToTrim/TR);
@@ -63,9 +64,12 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
         badVector = [zeros(numOfVolumesToTrim,1); inputBadVector; zeros(numOfVolumesToTrim,1)];
     end
 
-
-
     badVector(isnan(GS)|isnan(WS)|isnan(CS)) = true;
+
+    %Remove contiguous clusters of data that are too small
+    minNumContiguousDataPoints = minNumContiguousDataSeconds / TR;
+    badVector = removeSmallBadVecClusters(badVector,minNumContiguousDataPoints);
+
     GSscr  = filtfilt(fB,fA,tsInterp(GS,badVector));
     WSscr  = filtfilt(fB,fA,tsInterp(WS,badVector));
     CSscr  = filtfilt(fB,fA,tsInterp(CS,badVector));

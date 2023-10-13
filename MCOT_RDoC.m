@@ -1,5 +1,5 @@
 % these are the MCOT calls for the RDoC dataset
-sourceDir = '/mnt/jxvs2_02/HCP_Subject_Test';
+sourceDir = {'/mnt/jxvs2_02/Jae/sbu_kdata_done','/mnt/jxvs2_01/Thal_Loc_Data/RDoC_Analysis/QCplots_HCP_4.2_for_final/'};
 runnames = {'RSFC_fMRI_1','RSFC_fMRI_2','RSFC_fMRI_3','RSFC_fMRI_4', 'rfMRI_REST1_LR','rfMRI_REST1_RL','rfMRI_REST2_LR','rfMRI_REST2_RL'};
 badVolsFile = '/mnt/jxvs2_01/Thal_Loc_Data/RDoC_Analysis/EyeClosuresRS_JCW_2022-11-29.txt';
 filterCutoffs = [0.009 0.08];
@@ -39,10 +39,10 @@ combatstruct.mod=[age sex(:,2:end) disease(:,2:end)];
 combatstruct.method=1;
 
 %% mixed
-subjList_mx = {'50023','50026','50046','100307','211720'};
+subjList_mx = {'50002_2','50023','50026','50046'};
 
-workingDir_mx = '/mnt/jxvs2_02/neil/mcot_combat_stuff/wkdir';
-mCotWrapper(workingDir_mx,'CombatStruct', combatstruct,'sourcedirectory',sourceDir,'runnames',runnames,'filtercutoffs',filterCutoffs,...
+workingDir_mx = '/mnt/jxvs2_01/Thal_Loc_Data/RDoC_Analysis/MCOT_Kdata/testWorkingDir';
+mCotWrapper(workingDir_mx,'sourcedirectory',sourceDir,'runnames',runnames,'filtercutoffs',filterCutoffs,...
     'tr',TR,'ntrim',ntrim,'sectrimpostbpf',secTrimPostBPF,'minimumsecondsdataperrun',minSecData,'usegsr',false,'badvolsfile',badVolsFile,...
     'subjids',subjList_mx,'format',format)
 

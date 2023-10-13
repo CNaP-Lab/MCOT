@@ -1,0 +1,12 @@
+HC_RSTL = '/gpfs/projects/VanSnellenbergGroup/K_Preprocessed_Data/MCOT/HomeDir_091423_Reprocess/RSTL/HC/bothSites/InternalData';
+SCZ_RSTL = '/gpfs/projects/VanSnellenbergGroup/K_Preprocessed_Data/MCOT/HomeDir_091423_Reprocess/RSTL/SCZ/bothSites/InternalData';
+HC_RSonly = '/gpfs/projects/VanSnellenbergGroup/K_Preprocessed_Data/MCOT/HomeDir_091423_Reprocess/RSonly/HC/bothSites/InternalData';
+SCZ_RSonly = '/gpfs/projects/VanSnellenbergGroup/K_Preprocessed_Data/MCOT/HomeDir_091423_Reprocess/RSonly/SCZ/bothSites/InternalData';
+RSTLlist_GS0 = fullfile({HC_RSTL;SCZ_RSTL},'mseCalculationWorkspace_GS0.mat');
+RSTLlist_GS1 = fullfile({HC_RSTL;SCZ_RSTL},'mseCalculationWorkspace_GS1.mat');
+RSonlyList_GS0 = fullfile({HC_RSonly;SCZ_RSonly},'mseCalculationWorkspace_GS0.mat');
+RSonlyList_GS1 = fullfile({HC_RSonly;SCZ_RSonly},'mseCalculationWorkspace_GS1.mat');
+[RSTL_combinedResults_GS0] = combinedMSE_OptimalThresholds(RSTLlist_GS0);
+[RSTL_combinedResults_GS1] = combinedMSE_OptimalThresholds(RSTLlist_GS1);
+[RSonly_combinedResults_GS0] = combinedMSE_OptimalThresholds(RSonlyList_GS0);
+[RSonly_combinedResults_GS1] = combinedMSE_OptimalThresholds(RSonlyList_GS1);
