@@ -48,12 +48,12 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
     continueBool = false;
     removeSubjIndexFromContinue = false;
     forceParamSweep = false;
+    StopAfterPostProcessing = false; %PNT edit: this is false unless you add it as a varargin
     numArgIn = length(varargin);
     currentArgNumber = 1;
     while (currentArgNumber <= numArgIn)
         lowerStringCurrentArg = lower(string(varargin{currentArgNumber}));
         isNameValuePair = true;
-        StopAfterPostProcessing = false; %PNT edit: this is false unless you add it as a varargin
         switch(lowerStringCurrentArg)
             case lower("forceParamSweep")
                 forceParamSweep = varargin{currentArgNumber + 1};
