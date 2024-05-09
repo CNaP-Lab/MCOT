@@ -56,8 +56,8 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
         end
         DVbadVector = (DVvector >= DVcutoff);
 
-        FDbadVector(rmvec) = false;
-        DVbadVector(rmvec) = false;
+        %FDbadVector(rmvec) = false;
+        %DVbadVector(rmvec) = false; We want to scrub in the area removed after BPFing
         badVector = FDbadVector|DVbadVector;
     else
         %Disable targeted censoring methods
