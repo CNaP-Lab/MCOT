@@ -104,7 +104,7 @@ function [] = Kdata_eyeClosureCleanup(inputQCfile,outputQCfile,isSBUlowerThresho
     % Using the subject ID to tell - subject IDs starting with
     % 50000 or more are presumed to be SBU!
     % 2. If eye closures end and start less than 30 seconds apart, combine them
-    % Adapted from PNT code by JCW 05/05/2024
+    % Adapted from PNT code by JCW 05/05/2023
     fid = fopen(inputQCfile,'rt'); pause(eps); drawnow;
 
     try

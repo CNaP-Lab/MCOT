@@ -85,7 +85,8 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
         end
 
         %% Assemble Struct ----- NaN Fill based on longest data
-        parfor i = 1:length(subjExtractedTimeSeries)
+        %PARFOR
+        for i = 1:length(subjExtractedTimeSeries)
             subjExtractedTimeSeries(i).subjId = subjIds{i};
             subjExtractedTimeSeries(i).CS = nan(maxLength, 1, maxRuns);
             subjExtractedTimeSeries(i).GS = nan(maxLength, 1, maxRuns);
@@ -106,7 +107,8 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
 
     lowerFilterCutoff = filterCutoffs(1);
     upperFilterCutoff = filterCutoffs(2);
-    parfor i = subjStartItr:size(filenameMatrix,1)
+    %PARFOR
+    for i = subjStartItr:size(filenameMatrix,1)
         [X,GSt,WSt,CSt,maskedFlat] = deal([]); %#ok<ASGLU> 
         setFilters = false;
         maskFilenameMatrixSlice = maskFilenameMatrix(i, :);
@@ -181,14 +183,19 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
 
             roidat = reshape(Mask,[],1);
             mastermask = logical(roidat) | Bm(:) | WMm(:) | CSFm(:); % Gm(:) |
+            % fix by PNT 01/25/24: change the way mastermask is being used to account for ROIs being outside the brain mask   
+            
             rdat = roidat(mastermask);
-
+             
             %      Gm = Gm(mastermask);
-            Bm = Bm(mastermask);
-            WMm = WMm(mastermask);
-            CSFm = CSFm(mastermask);
-            WMm_eroded = WMm_eroded(mastermask);
-            CSFm_eroded = CSFm_eroded(mastermask);
+            Bm(~mastermask) = 0;
+            Bm = Bm(:);
+            WMm(~mastermask) = 0;
+            CSFm(~mastermask) = 0;
+            WMm_eroded(~mastermask) = 0;
+            WMm_eroded = WMm_eroded(:);
+            CSFm_eroded(~mastermask) = 0;
+            CSFm_eroded = CSFm_eroded(:);
 
             %%  Various filtering ----------------------------------------------------------------
             try
@@ -216,6 +223,10 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
             end
 
             %%  ROIs ----------------------------------------------------------------
+            % PNT: make masks mastermask sized
+            Bm = Bm(mastermask);
+            WMm_eroded = WMm_eroded(mastermask);
+            CSFm_eroded = CSFm_eroded(mastermask);
             try
                 volFlat = reshape(vol4D,[],size(vol4D,4)); %vectorize
                 maskedFlat = volFlat(mastermask,:); %shrink to mastermask size <- we've already determined these are all the voxels we could need
@@ -232,23 +243,24 @@ function subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, 
 
                 roiTS = zeros(size(maskedFlat,2),max(rdat));
                 for k = 1:max(rdat)
-                    roiTS(:,k) = mean(maskedFlat(rdat==k,:),1);
+                    roiTS(:,k) = mean(maskedFlat(rdat==k,:),1,'omitnan');
                 end
 
                 rts = roiTS - (X*(X\roiTS));
                 subjExtractedTimeSeries(i).rts(1:size(rts, 1), :, j) = rts;
 
-            catch
+            catch err
+                disp(err)
                 threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], 'Error calculating ROI time series.')
                 error('Error calculating ROI time series.')
             end
 
-            GSt = mean(maskedFlat(Bm,:))'; %Global Signal; these are signals we want to have.
+            GSt = mean(maskedFlat(Bm,:),'omitnan')'; %Global Signal; these are signals we want to have.
             %        GmSt = mean(maskedFlat(Gm,:))'; %gray matter signal
             %             WSt = mean(maskedFlat(WMm,:))'; %white matter signal
             %             CSt = mean(maskedFlat(CSFm,:))'; %CSF signal
-            WSt = mean(maskedFlat(WMm_eroded,:))'; %white matter signal
-            CSt = mean(maskedFlat(CSFm_eroded,:))'; %CSF signal
+            WSt = mean(maskedFlat(WMm_eroded,:),'omitnan')'; %white matter signal
+            CSt = mean(maskedFlat(CSFm_eroded,:),'omitnan')'; %CSF signal
 
             try
                 GSt = GSt - (X*(X\GSt));

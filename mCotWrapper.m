@@ -103,6 +103,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                 % study directory
             case "subjids"
                 optionalSubjIDlist = varargin{currentArgNumber + 1};
+                subjIds = varargin{currentArgNumber + 1};
             case "badvolsfile" % path to eye closure file (PNT 11/28/22)
                 eyeClosureFile = varargin{currentArgNumber + 1};
             case "stopafterpostprocessing"
@@ -191,6 +192,7 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                         % study directory
                     case "subjids"
                         optionalSubjIDlist = varargin{currentArgNumber+1};
+                        subjIds = varargin{currentArgNumber+1};
                     case "badvolsfile" % path to eye closure file (PNT 11/28/22)
                         eyeClosureFile = varargin{currentArgNumber + 1};
                         % case "combatstruct"
