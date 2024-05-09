@@ -1,5 +1,4 @@
 # MCOT
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) <br>
 Multiband Censoring Optimization Tool (MCOT) for Resting-State Functional Connectivity Analyses
 
 This is a MATLAB software package to accompany the article:

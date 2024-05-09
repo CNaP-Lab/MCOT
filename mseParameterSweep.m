@@ -1,5 +1,14 @@
-function [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = mseParameterSweep(combatstruct,subjExtractedTimeSeries,useGSR,parameterSweepFileName,TR,continueBool, numOfSecToTrim, minSecDataNeeded)
+function [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = ...
+        mseParameterSweep(subjExtractedTimeSeries,useGSR,parameterSweepFileName,TR,continueBool, numOfSecToTrim, minSecDataNeeded,...
+        numRunsDataNeededPerSubject,minSecDataNeededPerSubject,minNumContiguousDataSeconds, ...
+        varargin)
     
+    % get combat struct
+    if ~isempty(varargin)
+        combatstruct = varargin{1};
+    end
+
+
     numROI = size(subjExtractedTimeSeries(1).rts,2);
     numROIpairs = nchoosek(numROI,2);
     
@@ -46,14 +55,23 @@ function [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcut
         disp([num2str(percentComplete) '%' ]); pause(eps); drawnow;
         [targetedSubjRinROIpair,randomSubjRinROIpair,totalNumFramesRemaining(loopCounter,:),totalNumFrames(loopCounter,:), ...
             meanSamplingVar(loopCounter),meanRunsVar(loopCounter),harmMeanFrames(loopCounter),harmMeanRuns(loopCounter),meanRunsNoSamplingVar(loopCounter),harmMeanFramesMinus3(loopCounter)] ...
-            = parameterSweepIteration(FDcutoff,gevDVcutoff,useGSR,rawCutoff,useFDgev,useDVgev,TR,numROIpairs,subjExtractedTimeSeries, numOfSecToTrim, minSecDataNeeded);
-        
+            = parameterSweepIteration(FDcutoff,gevDVcutoff,useGSR,rawCutoff,useFDgev,useDVgev,TR,numROIpairs,subjExtractedTimeSeries, numOfSecToTrim, minSecDataNeeded, ...
+            numRunsDataNeededPerSubject,minSecDataNeededPerSubject,minNumContiguousDataSeconds);
+
         numFramesRemoved = totalNumFrames(loopCounter,:) - totalNumFramesRemaining(loopCounter,:);
         proportionFramesRemoved = ( numFramesRemoved ) ./ totalNumFrames(loopCounter,:);
         PFR(loopCounter,:) = 100 .* proportionFramesRemoved;
-        
-        [targetedVariance(:,loopCounter),targetedRs(:,loopCounter),randomRs(:,loopCounter)] = ...
-            parameterSweepStatistics(combatstruct,targetedSubjRinROIpair,randomSubjRinROIpair);
+        if exist('combatstruct','var')
+            combatTest = which('combat');
+            if (isempty(combatTest))
+                error('ComBat is not on the path!');
+            end
+            [targetedVariance(:,loopCounter),targetedRs(:,loopCounter),randomRs(:,loopCounter)] = ...
+                parameterSweepStatistics(targetedSubjRinROIpair,randomSubjRinROIpair,combatstruct);
+        else
+            [targetedVariance(:,loopCounter),targetedRs(:,loopCounter),randomRs(:,loopCounter)] = ...
+                parameterSweepStatistics(targetedSubjRinROIpair,randomSubjRinROIpair);
+        end
         
         toc; pause(eps); drawnow;
         if((loopCounter == 1) || ~(mod(loopCounter,1000)))

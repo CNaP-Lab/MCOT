@@ -1,4 +1,4 @@
-function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolder,inputFormat, rsfcTaskNames, outputFolder, OnlyTheseIDs, varargin)
+function [outputFilenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolder,inputFormat, rsfcTaskNames, outputFolder, OnlyTheseIDs, varargin)
     % Depending on inputFormat, rsfcTaskNames can be a single name (in the case
     % of fmriprep) or an enumerated list in the case of HCP
     
@@ -15,20 +15,58 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
     
     
     %Set Study Directory
-    studyDirectory = dir(parentFolder);
-    studyDirectory = studyDirectory(~ismember({studyDirectory.name},{'.','..'}));
-    validFolders = [studyDirectory.isdir];
-    studyDirectory = studyDirectory(validFolders);
+    % edit on 06/06/23 by PNT: allow user to give multiple directories that
+    % become a single directory struct (for combining datasets)
+    studyDirectory = [];
+    if iscell(parentFolder)
+        for i = 1:length(parentFolder)
+            thisDir = dir(parentFolder{i});
+            thisDir = thisDir(~ismember({thisDir.name},{'.','..'}));
+            validFolders = [thisDir.isdir];
+            thisDir = thisDir(validFolders);
+            if i == 1
+                studyDirectory = thisDir;
+            else
+                studyDirectory = [studyDirectory; thisDir];
+            end
+        end
+    else
+        studyDirectory = dir(parentFolder);
+        studyDirectory = studyDirectory(~ismember({studyDirectory.name},{'.','..'}));
+        validFolders = [studyDirectory.isdir];
+        studyDirectory = studyDirectory(validFolders);
+    end
     
     % edit on 11/28/22 by PNT: see if a subjIDlist was provided and filter
     % the studyDirectory to only have those subjects
     if ~isempty(OnlyTheseIDs)
         SubjIdxs = [];
-        subjNames = {studyDirectory.name};
+        subjNames = [];
+        for k = 1:length(studyDirectory)
+            subjNames{k} = [studyDirectory(k).folder filesep studyDirectory(k).name];
+        end
         for idx = 1:length(OnlyTheseIDs)
-            foundSubj = find(strcmp(subjNames,OnlyTheseIDs{idx}));
+            % edit 06/14/23 by PNT: you can now use "_FolderNumber" to tell
+            % MCOT where to find data for a subject
+            thisID = OnlyTheseIDs{idx};
+            if contains(thisID,'_')
+                IDplusFolderIdx = strsplit(thisID,'_');
+                folderIdx = str2num(IDplusFolderIdx{2});
+                thisIDonly = IDplusFolderIdx{1};
+                thisFolderToSearchFor = parentFolder{folderIdx};
+                disp(['Finding ' thisIDonly ' in ' thisFolderToSearchFor '...']); pause(eps); drawnow;
+                foundSubj = find(strcmp(subjNames,[thisFolderToSearchFor filesep thisIDonly]));
+            else
+                foundSubj = find(contains(subjNames,OnlyTheseIDs{idx}));
+            end
             if ~isempty(foundSubj)
-                SubjIdxs(end+1) = foundSubj;
+                if length(foundSubj)>1
+                    error(['Subject ' OnlyTheseIDs{idx} ' found in multiple folders, not sure which one you want. Crashing...']);
+                else
+                    SubjIdxs(end+1) = foundSubj;
+                end
+            else
+                error(['Subject ' OnlyTheseIDs{idx} ' was not found. Crashing...']);
             end
         end
     end
@@ -46,7 +84,10 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
         filenameMatrix = cell(length(studyDirectory), 1);
         subjIds = cell(length(studyDirectory), 1);
         for i = 1:length(studyDirectory)
-            thisSubjFold = studyDirectory(i).name;
+            % EDIT BY PNT 06/26/23: thisSubjFold is now a full path because
+            % the variable parentFolder can be a cell array (which breaks
+            % things)
+            thisSubjFold = fullfile(studyDirectory(i).folder,studyDirectory(i).name);
             subjIds{i} = studyDirectory(i).name;
             % ---- Intialize Mask Finding variables -----
             brainMaskFound = false;
@@ -56,16 +97,16 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
             % --------------------------------------------
             
                 
-            if exist([parentFolder filesep thisSubjFold filesep 'func'], 'dir')
+            if exist([thisSubjFold filesep 'func'], 'dir')
                 
                 if ~parcelMaskFound
                     %check to see if mask file exists, zipped or not
-                    pdir = dir([parentFolder filesep thisSubjFold filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-aparcaseg_dseg.nii*']);
+                    pdir = dir([thisSubjFold filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-aparcaseg_dseg.nii*']);
                     if ~isempty(pdir)
                         % if its zipped, unzip to tmp working folder...
                         if contains(lower(pdir(1).name), '.gz')
-                            zippedFile = [parentFolder filesep thisSubjFold filesep 'func' filesep pdir(1).name];
-                            newFolderPath = strrep(zippedFile, parentFolder, outputFolder);
+                            zippedFile = [thisSubjFold filesep 'func' filesep pdir(1).name];
+                            newFolderPath = strrep(zippedFile, studyDirectory(i).folder, outputFolder);
                             unzippedFile = strrep(newFolderPath, '.gz', '');
                             unzippedFile = strrep(unzippedFile, '.GZ', '');
                             [unzipPath,~,~] = fileparts(unzippedFile);
@@ -74,7 +115,7 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                             end
                             parcelMaskFile = unzippedFile;
                         else
-                            parcelMaskFile = [parentFolder filesep thisSubjFold filesep 'func' filesep pdir(1).name];
+                            parcelMaskFile = [thisSubjFold filesep 'func' filesep pdir(1).name];
                         end
                         
                         % so this work isn't repeated on subsequent
@@ -95,29 +136,29 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                 
                 
                 
-                        runFiles = dir([parentFolder filesep thisSubjFold filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-preproc_bold.nii.gz']);
-                        MPfiles = dir([parentFolder filesep thisSubjFold filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_desc-confounds_regressors.json']);
+                        runFiles = dir([thisSubjFold filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-preproc_bold.nii.gz']);
+                        MPfiles = dir([thisSubjFold filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_desc-confounds_regressors.json']);
                         for k = 1:length(runFiles)
-                            filenameMatrix{i, k} = [parentFolder filesep thisSubjFold filesep 'func' filesep runFiles(k).name];
-                            cReg = tdfread([fullfile(parentFolder,thisSubjFold, 'func') filesep MPfiles(k).name]);
+                            filenameMatrix{i, k} = [thisSubjFold filesep 'func' filesep runFiles(k).name];
+                            cReg = tdfread([fullfile(thisSubjFold, 'func') filesep MPfiles(k).name]);
                             mReg = [cReg.trans_x cReg.trans_y cReg.trans_z cReg.rot_x cReg.rot_y cReg.rot_z];
                             degReg = mReg(:,4:6).*(180./pi);
                             MPs{i,k} = [mReg(:,1:3) degReg];
                         end
-            elseif ~isempty(dir([parentFolder filesep thisSubjFold filesep 'ses-*']))
-                sesDirs = dir([parentFolder filesep thisSubjFold filesep 'ses-*']);
+            elseif ~isempty(dir([thisSubjFold filesep 'ses-*']))
+                sesDirs = dir([thisSubjFold filesep 'ses-*']);
                 sesDirs = sesDirs(sesDirs.isdir);
                 for j = 1:length(sesDirs)
-                    if exist([parentFolder filesep thisSubjFold filesep sesDirs(j).name filesep 'func'], 'dir')
+                    if exist([thisSubjFold filesep sesDirs(j).name filesep 'func'], 'dir')
                         
                         if ~parcelMaskFound
                             %check to see if mask file exists, zipped or not
-                            pdir = dir([parentFolder filesep thisSubjFold filesep sesDirs(j).name filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-aparcaseg_dseg.nii*']);
+                            pdir = dir([thisSubjFold filesep sesDirs(j).name filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-aparcaseg_dseg.nii*']);
                             if ~isempty(pdir)
                                 % if its zipped, unzip to tmp working folder...
                                 if contains(lower(pdir(1).name), '.gz')
-                                    zippedFile = [parentFolder filesep thisSubjFold filesep sesDirs(j).name filesep 'func' filesep pdir(1).name];
-                                    newFolderPath = strrep(zippedFile, parentFolder, outputFolder);
+                                    zippedFile = [thisSubjFold filesep sesDirs(j).name filesep 'func' filesep pdir(1).name];
+                                    newFolderPath = strrep(zippedFile, studyDirectory(i).folder, outputFolder);
                                     unzippedFile = strrep(newFolderPath, '.gz', '');
                                     unzippedFile = strrep(unzippedFile, '.GZ', '');
                                     [unzipPath,~,~] = fileparts(unzippedFile);
@@ -126,7 +167,7 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                                     end
                                     parcelMaskFile = unzippedFile;
                                 else
-                                    parcelMaskFile = [parentFolder filesep thisSubjFold filesep sesDirs(j).name filesep 'func' filesep pdir(1).name];
+                                    parcelMaskFile = [thisSubjFold filesep sesDirs(j).name filesep 'func' filesep pdir(1).name];
                                 end
                                 
                                 % so this work isn't repeated on subsequent
@@ -147,11 +188,11 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                         
                         
                         
-                        runFiles = dir([parentFolder filesep thisSubjFold filesep sesDirs(j).name filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-preproc_bold.nii.gz']);
-                        MPfiles = dir([parentFolder filesep thisSubjFold filesep sesDirs(j).name filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_desc-confounds_regressors.tsv']);
+                        runFiles = dir([thisSubjFold filesep sesDirs(j).name filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_space-' fmriPrepSpace '_desc-preproc_bold.nii.gz']);
+                        MPfiles = dir([thisSubjFold filesep sesDirs(j).name filesep 'func' filesep 'sub-*_ses-*_task-' rsfcTaskNames '_run-*_desc-confounds_regressors.tsv']);
                         for k = 1:length(runFiles)
-                            filenameMatrix{i, k} = [parentFolder filesep thisSubjFold filesep sesDirs(j).name filesep 'func' filesep runFiles(k).name];
-                            cReg = tdfread([fullfile(parentFolder,thisSubjFold, sesDirs(j).name, 'func') filesep MPfiles(k).name]);
+                            filenameMatrix{i, k} = [thisSubjFold filesep sesDirs(j).name filesep 'func' filesep runFiles(k).name];
+                            cReg = tdfread([fullfile(thisSubjFold, sesDirs(j).name, 'func') filesep MPfiles(k).name]);
                             mReg = [cReg.trans_x cReg.trans_y cReg.trans_z cReg.rot_x cReg.rot_y cReg.rot_z];
                             degReg = mReg(:,4:6).*(180./pi);
                             MPs{i,k} = [mReg(:,1:3) degReg];
@@ -162,12 +203,12 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
             
             if ~brainMaskFound
                 %check to see if mask file exists, zipped or not
-                pdir = dir([parentFolder filesep thisSubjFold filesep 'anat' filesep 'sub-*_space-' fmriPrepSpace '_desc-brain_mask.nii*']);
+                pdir = dir([thisSubjFold filesep 'anat' filesep 'sub-*_space-' fmriPrepSpace '_desc-brain_mask.nii*']);
                 if ~isempty(pdir)
                     % if its zipped, unzip to tmp working folder...
                     if contains(lower(pdir(1).name), '.gz')
-                        zippedFile = [parentFolder filesep thisSubjFold filesep 'anat' filesep pdir(1).name];
-                        newFolderPath = strrep(zippedFile, parentFolder, outputFolder);
+                        zippedFile = [thisSubjFold filesep 'anat' filesep pdir(1).name];
+                        newFolderPath = strrep(zippedFile, studyDirectory(i).folder, outputFolder);
                         unzippedFile = strrep(newFolderPath, '.gz', '');
                         unzippedFile = strrep(unzippedFile, '.GZ', '');
                         [unzipPath,~,~] = fileparts(unzippedFile);
@@ -176,14 +217,14 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                         end
                         brainMaskFile = unzippedFile;
                     else
-                        brainMaskFile = [parentFolder filesep thisSubjFold filesep 'anat' filesep pdir(1).name];
+                        brainMaskFile = [thisSubjFold filesep 'anat' filesep pdir(1).name];
                     end
                     
                     % so this work isn't repeated on subsequent
                     % loops
                     brainMaskFound = true;
                     
-                    copiedBrainFile = strrep(brainMaskFile, parentFolder, outputFolder);
+                    copiedBrainFile = strrep(brainMaskFile, studyDirectory(i).folder, outputFolder);
                     if ~exist(copiedBrainFile, 'file')
                         copyfile(brainMaskFile, copiedBrainFile)
                     end
@@ -226,12 +267,15 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
         subjIds = cell(length(studyDirectory), 1);
         %each subj
         for i = 1:length(studyDirectory)
-            thisSubjFold = studyDirectory(i).name;
+            % EDIT BY PNT 06/26/23: thisSubjFold is now a full path because
+            % the variable parentFolder can be a cell array (which breaks
+            % things)
+            thisSubjFold = fullfile(studyDirectory(i).folder,studyDirectory(i).name);
             subjIds{i} = studyDirectory(i).name;
             %if the subject has a results folder (which it should in HCP
             %format)...
-            if exist([parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'Results'],'dir')
-                resultsDir = [parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'Results'];
+            if exist([thisSubjFold filesep 'MNINonLinear' filesep 'Results'],'dir')
+                resultsDir = [thisSubjFold filesep 'MNINonLinear' filesep 'Results'];
                 
                 % ---- Intialize Mask Finding variables -----
                 brainMaskFound = false;
@@ -249,7 +293,7 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                         if ~isempty(bmdir)
                             % if its zipped, unzip to tmp working folder...
                             if contains(lower(bmdir(1).name), '.gz')
-                                newFolderPath = strrep([resultsDir filesep char(rsfcTaskNames(j))], parentFolder, outputFolder);
+                                newFolderPath = strrep([resultsDir filesep char(rsfcTaskNames(j))], studyDirectory(i).folder, outputFolder);
                                 if ~exist([newFolderPath filesep 'brainmask_fs.2.nii'], 'file')
                                     gunzip([resultsDir filesep char(rsfcTaskNames(j)) filesep 'brainmask_fs.2.nii.gz'], newFolderPath);
                                 end
@@ -277,16 +321,16 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                     % the following logic mirrors the brain mask logic
                     % above - see comments there for details
                     if ~parcelMaskFound
-                        parcelDir = dir([parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'ROIs' filesep 'Atlas_wmparc.2.nii*']);
+                        parcelDir = dir([thisSubjFold filesep 'MNINonLinear' filesep 'ROIs' filesep 'Atlas_wmparc.2.nii*']);
                         if ~isempty(parcelDir)
                             if contains(lower(parcelDir(1).name), '.gz')
-                                newFolderPath = strrep([parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'ROIs'], parentFolder, outputFolder);
+                                newFolderPath = strrep([thisSubjFold filesep 'MNINonLinear' filesep 'ROIs'], studyDirectory(i).folder, outputFolder);
                                 if ~exist([newFolderPath filesep 'Atlas_wmparc.2.nii'], 'file')
-                                    gunzip([parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'ROIs' filesep 'Atlas_wmparc.2.nii.gz'], newFolderPath);
+                                    gunzip([thisSubjFold filesep 'MNINonLinear' filesep 'ROIs' filesep 'Atlas_wmparc.2.nii.gz'], newFolderPath);
                                 end
                                 parcelMaskFile = [newFolderPath filesep 'Atlas_wmparc.2.nii'];
                             else
-                                parcelMaskFile = [parentFolder filesep thisSubjFold filesep 'MNINonLinear' filesep 'ROIs' filesep 'Atlas_wmparc.2.nii'];
+                                parcelMaskFile = [thisSubjFold filesep 'MNINonLinear' filesep 'ROIs' filesep 'Atlas_wmparc.2.nii'];
                             end
                             
                             parcelMaskFound = true;
@@ -312,36 +356,52 @@ function [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(parentFolde
                     end
                 end
             else
-                str = ['no Results folder found for subject ' studyDirectory(i).name];
-                threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], str);
-                error(str);
+                error(['no Results folder found for subject ' studyDirectory(i).name])
             end
             
         end
         
     else
-        str = 'Unrecognized Format input to filenameParser';
-        threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], str);
-        error(str)
+        error('Unrecognized Format input to filenameParser')
     end
     
     
     %unzip and relink run files that need it.  Runs are unzipped to tmp
     %working directory, or held in place.
-    for i = 1:size(filenameMatrix, 1)
-        for j = 1:size(filenameMatrix, 2)
-            if ~isempty(filenameMatrix{i,j})
-                [fPath, name, fExt] = fileparts(filenameMatrix{i,j});
-                if strcmp(lower(fExt), '.gz')
-                    newPath = strrep(fPath, parentFolder, outputFolder);
-                    if ~exist(fullfile(newPath, name), 'file')
-                        filenameMatrix(i,j) = gunzip(filenameMatrix{i,j}, newPath);
+    numFilenameMatrixRows = size(filenameMatrix, 1);
+    numFilenameMatrixCols = size(filenameMatrix, 2);
+    outputFilenameMatrix = filenameMatrix;
+    parfor i = 1:numFilenameMatrixRows
+        filenameMatrixSlice = filenameMatrix(i,:);
+        outputFilenameMatrixSlice = filenameMatrixSlice;
+        newPath = [];
+        for j = 1:numFilenameMatrixCols
+            filenameMatrixVal = filenameMatrixSlice{j};
+            if ~isempty(filenameMatrixVal)
+                [fPath, name, fExt] = fileparts(filenameMatrixVal);
+                if strcmpi(fExt, '.gz')
+                    % PNT: watch this
+                    if iscell(parentFolder)
+                        for k = 1:length(parentFolder)
+                            newPath = strrep(fPath, parentFolder{k}, outputFolder);
+                            if exist(fullfile(newPath, name), 'file')
+                                break;
+                            end
+                        end
                     else
-                        filenameMatrix(i,j) = {fullfile(newPath,name)};
+                        newPath = strrep(fPath, parentFolder, outputFolder);
+                    end
+                    if ~exist(fullfile(newPath, name), 'file')
+                        outputFilenameMatrixSlice(j) = gunzip(filenameMatrixVal, newPath);
+                    else
+                        outputFilenameMatrixSlice(j) = {fullfile(newPath,name)};
                     end
                 end
+            else
+                outputFilenameMatrixSlice{j} = '';
             end
         end
+        outputFilenameMatrix(i,:) = outputFilenameMatrixSlice;
     end
     
     

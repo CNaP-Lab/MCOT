@@ -29,7 +29,7 @@ function [] = save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutpu
             mkdir(fMPsDir); pause(eps); drawnow;
         end
         for j = 1:numRuns
-            runName = subjExtractedTimeSeries(1).runName{j};
+            runName = subjExtractedTimeSeries(i).runName{j};
             runString = [runName '.csv'];
             lpfFDfile = fullfile(lpfFDdir,['LPF_FD_' runString]);
             lpfDVfile = fullfile(lpfDVdir,['LPF_DV_' runString]);

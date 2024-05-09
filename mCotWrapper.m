@@ -1,7 +1,10 @@
 function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, varargin)
     %UNTITLED Summary of this function goes here
     %   Detailed explanation goes here
-    
+    %mseParameterSweep needs:
+    % numRunsDataNeededPerSubject,minSecDataNeededPerSubject,minNumContiguousDataSeconds
+    numPreprocWorkers = 4;
+    numParamSweepWorkers = 28;
     filepath = fileparts(mfilename('fullpath'));
     dirsToPath = {'spm12', ...
         'MCOT_resources', ...
@@ -11,50 +14,65 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         dirToAdd = fullfile(filepath,dirsToPath{i});
         addpath(dirToAdd);
     end
-    
+
     %% Create the working directory file heirarchy.
-    
+
     if ~exist(workingDir, 'dir')
         mkdir(workingDir);
     end
-    
-    
+
+
     if ~exist([workingDir filesep 'InternalData'], 'dir')
         mkdir([workingDir filesep 'InternalData']);
     end
-    
+
     if ~exist([workingDir filesep 'Outputs'], 'dir')
         mkdir([workingDir filesep 'Outputs']);
     end
-    
+
     if ~exist([workingDir filesep 'Logs'], 'dir')
         mkdir([workingDir filesep 'Logs']);
     end
-    
-    
-    
+
+    pause(eps); drawnow; cd(workingDir); pause(eps); drawnow;
+
+    currentStepFileName = [workingDir filesep 'InternalData' filesep 'currentStep' '.mat'];
+
     %% Argument decoding and Variable Instantiation
-    
+
     pathToDefaults = which('mcotDefaults.mat');
-    load(pathToDefaults, 'filterCutoffs','format','minSecDataNeeded', 'nTrim', 'numOfSecToTrim','useGSR');
+    load(pathToDefaults, 'filterCutoffs','format','minSecDataNeeded', 'nTrim', 'numOfSecToTrim');
     imageSpace = '';
-    
-    
+
+
     continueBool = false;
-    parameterSweepFileName = [workingDir filesep 'InternalData' filesep 'paramSweep.mat'];
-    
+    removeSubjIndexFromContinue = false;
+    forceParamSweep = false;
     numArgIn = length(varargin);
     currentArgNumber = 1;
     while (currentArgNumber <= numArgIn)
         lowerStringCurrentArg = lower(string(varargin{currentArgNumber}));
         isNameValuePair = true;
+        StopAfterPostProcessing = false; %PNT edit: this is false unless you add it as a varargin
         switch(lowerStringCurrentArg)
+            case lower("forceParamSweep")
+                forceParamSweep = varargin{currentArgNumber + 1};
+            case lower("numRunsDataNeededPerSubject")
+                numRunsDataNeededPerSubject = varargin{currentArgNumber + 1};
+            case lower("minSecDataNeededPerSubject")
+                minSecDataNeededPerSubject = varargin{currentArgNumber + 1};
+            case lower("minNumContiguousDataSeconds")
+                minNumContiguousDataSeconds = varargin{currentArgNumber + 1};
             case "motionparameters"
                 MPs = varargin{currentArgNumber + 1};
             case "tr"
                 TR = varargin{currentArgNumber + 1};
-            case "CombatStruct"
+            case "combatstruct"
                 combatstruct = varargin{currentArgNumber + 1};
+                combatTest = which('combat');
+                if (isempty(combatTest))
+                    error('ComBat is not on the path!');
+                end
             case "filenamematrix"
                 filenameMatrix = varargin{currentArgNumber + 1};
             case "maskmatrix"
@@ -85,8 +103,19 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                 % study directory
             case "subjids"
                 optionalSubjIDlist = varargin{currentArgNumber + 1};
+                subjIds = varargin{currentArgNumber + 1};
             case "badvolsfile" % path to eye closure file (PNT 11/28/22)
                 eyeClosureFile = varargin{currentArgNumber + 1};
+            case "stopafterpostprocessing"
+                StopAfterPostProcessing = varargin{currentArgNumber + 1};
+                if (StopAfterPostProcessing)
+                    warning('stopafterpostprocessing enabled.'); pause(1); drawnow;
+                end
+            case "numparamsweepworkers"
+                numParamSweepWorkers = varargin{currentArgNumber + 1};
+            case "removesubjindexfromcontinue"
+                removeSubjIndexFromContinue = true;
+                indexToRemoveSubj = varargin{currentArgNumber + 1};
             otherwise
                 error("Unrecognized input argument")
         end
@@ -97,19 +126,23 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
         end
         currentArgNumber = currentArgNumber + numToAdd;
     end
-    
+
     disp('Read all arguments')
-    
-    
-    
+
+
+
     %% Argument Validation --------- this needs another pass after the GUI is made so we can nail down variables
-    
+
     if continueBool
         try
-            loadedCurrentStepData = load([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', 'paramSweepCompleted', 'maxBiasCompleted');
+            loadedCurrentStepData = load(currentStepFileName, 'subjExtractedCompleted', ...
+                'paramSweepCompleted_noGSR','paramSweepCompleted_withGSR', ...
+                'maxBiasCompleted_noGSR','maxBiasCompleted_withGSR');
             subjExtractedCompleted = loadedCurrentStepData.subjExtractedCompleted;
-            paramSweepCompleted = loadedCurrentStepData.paramSweepCompleted;
-            maxBiasCompleted = loadedCurrentStepData.maxBiasCompleted;
+            paramSweepCompleted_noGSR = loadedCurrentStepData.paramSweepCompleted_noGSR;
+            maxBiasCompleted_noGSR = loadedCurrentStepData.maxBiasCompleted_noGSR;
+            paramSweepCompleted_withGSR = loadedCurrentStepData.paramSweepCompleted_withGSR;
+            maxBiasCompleted_withGSR = loadedCurrentStepData.maxBiasCompleted_withGSR;
             loadedInternalData = load([workingDir filesep 'InternalData' filesep 'inputFlags.mat'], 'varargin');
             varargin = loadedInternalData.varargin;
             % Reparse input values from previous run
@@ -119,6 +152,12 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                 lowerStringCurrentArg = lower(string(varargin{currentArgNumber}));
                 isNameValuePair = true;
                 switch(lowerStringCurrentArg)
+                    case lower("numRunsDataNeededPerSubject")
+                        numRunsDataNeededPerSubject = varargin{currentArgNumber + 1};
+                    case lower("minSecDataNeededPerSubject")
+                        minSecDataNeededPerSubject = varargin{currentArgNumber + 1};
+                    case lower("minNumContiguousDataSeconds")
+                        minNumContiguousDataSeconds = varargin{currentArgNumber + 1};
                     case "motionparameters"
                         MPs = varargin{currentArgNumber + 1};
                     case "tr"
@@ -148,15 +187,22 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                         numOfSecToTrim = varargin{currentArgNumber + 1};
                     case "imagespace"
                         imageSpace = varargin{currentArgNumber + 1};
-                    % edit on 11/28/22 by PNT: Allows for user to
-                    % specify specific subj IDs to process from a larger
-                    % study directory
+                        % edit on 11/28/22 by PNT: Allows for user to
+                        % specify specific subj IDs to process from a larger
+                        % study directory
                     case "subjids"
-                        optionalSubjIDlist = varargin{currentArgNumber+1}; 
+                        optionalSubjIDlist = varargin{currentArgNumber+1};
+                        subjIds = varargin{currentArgNumber+1};
                     case "badvolsfile" % path to eye closure file (PNT 11/28/22)
                         eyeClosureFile = varargin{currentArgNumber + 1};
+                        % case "combatstruct"
+                        %     combatstruct = varargin{currentArgNumber + 1};
+                        %     combatTest = which('combat');
+                        %     if (isempty(combatTest))
+                        %         error('ComBat is not on the path!');
+                        %     end
                     otherwise
-                        error("Unrecognized input argument")
+                        %error("Unrecognized input argument")
                 end
                 if (isNameValuePair)
                     numToAdd = 2;
@@ -171,28 +217,34 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
             error('Tried to continue from previous run but no data found.')
         end
     else
-        subjExtractedCompleted = false;
-        paramSweepCompleted = false;
-        maxBiasCompleted = false;
+        [subjExtractedCompleted, ...
+            paramSweepCompleted_noGSR, ...
+            maxBiasCompleted_noGSR, ...
+            paramSweepCompleted_withGSR, ...
+            maxBiasCompleted_withGSR] = deal(false);
         save([workingDir filesep 'InternalData' filesep 'inputFlags.mat'], 'varargin','-v7.3','-nocompression');
-        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', 'paramSweepCompleted', 'maxBiasCompleted', '-v7.3', '-nocompression');
+        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', 'paramSweepCompleted_withGSR', 'maxBiasCompleted_withGSR', 'paramSweepCompleted_noGSR', 'maxBiasCompleted_noGSR', '-v7.3', '-nocompression');
     end
-    
+
     if subjExtractedCompleted
         try
             subjExtractedCompleted = false;
             load([workingDir filesep 'InternalData' filesep 'subjExtractedTimeSeries.mat'], 'subjExtractedTimeSeries');
             subjExtractedCompleted = true;
             disp('Loaded subjExtractedTimeSeries.mat')
+            if(removeSubjIndexFromContinue)
+                subjExtractedTimeSeries(indexToRemoveSubj) = [];
+            end
         catch err
             disp('Could not load subjExtractedTimeSeries.mat. Regenerating instead.');
         end
     end
-    
+
     if ~subjExtractedCompleted
-        
+        delete(gcp('nocreate'));
+        clusterParPool(numPreprocWorkers);
         %% Parse supported directory structures to automatically calc filenames, masks, and MPs
-        
+
         if ~strcmp(format, 'custom')
             if exist('optionalSubjIDlist','var')
                 [filenameMatrix, maskMatrix, MPs, subjIds] = filenameParser(sourceDir, format, rsfcTaskNames, workingDir, optionalSubjIDlist, imageSpace);
@@ -201,41 +253,54 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
             end
             disp('Files parsed')
         end
-        
-        
-        
+
+
+
         %% Validate Provided Files
         if ~fileValidator(filenameMatrix, maskMatrix)
             threshOptLog([workingDir filesep 'Logs' filesep 'log.txt'], 'Filename or Mask Files could not be validated.  Make sure all files provided are nifti format, uncompressed, and accessible to the current user');
             error('Filename or Mask Files could not be validated.  Make sure all files provided are nifti format, uncompressed, and accessible to the current user')
         end
-        
+
         disp('Files validated')
-        
-        
-        
+
+
+
         %% SubjExtractedTimeSeries
-        
+
         subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskMatrix, workingDir, continueBool, filterCutoffs, subjIds);
         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-v7.3', '-nocompression');
         disp('Filtering completed. ROI Time Series calculated.')
-        
-        
+
+
         %% Bad Volumes set from Eye closures (PNT 11/28/22)
         if exist('eyeClosureFile','var')
             subjExtractedTimeSeries = getBadVols(eyeClosureFile,TR,subjExtractedTimeSeries);
             disp('Bad Volumes Flagged.')
         end
-        
-        
-        
+
+
+
         framwiseMotionVectorOutputDir = fullfile(workingDir,'Outputs','Framewise_Motion_Vectors');
         save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutputDir);
         disp(['Saved LPF-FD, GEVDV, and filtered MPs in: ' framwiseMotionVectorOutputDir]); drawnow;
-        
+
         subjExtractedCompleted = true;
+        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-v7.3', '-nocompression');
+
     end
-    
+    % PNT: put this outside of SETScompleted conditional so it always runs
+    % just to make sure
+    if exist('eyeClosureFile','var')
+        subjExtractedTimeSeries = getBadVols(eyeClosureFile,TR,subjExtractedTimeSeries);
+        disp('Bad Volumes Flagged.')
+    end
+
+
+
+    framwiseMotionVectorOutputDir = fullfile(workingDir,'Outputs','Framewise_Motion_Vectors');
+    save_LPFFD_GEVDV(subjExtractedTimeSeries,framwiseMotionVectorOutputDir);
+    disp(['Saved LPF-FD, GEVDV, and filtered MPs in: ' framwiseMotionVectorOutputDir]); drawnow;
     %% Checker
     % Cleans up subjextractedtimeseries to remove all NaN or 0 runs, saves
     % memory too
@@ -244,41 +309,106 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
     % User needs to know:
     %   When an ROI time series hs all 0s or NaNs, and whether the run is
     %   kept (run is only removed if all ROIs are all 0/NaN).
-    
-    
-    
-    %% Parameter sweep
-    if ~paramSweepCompleted
-        [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = mseParameterSweep(combatstruct,subjExtractedTimeSeries,useGSR,parameterSweepFileName, TR, continueBool, numOfSecToTrim, minSecDataNeeded);
-        paramSweepCompleted = true;
-        save([workingDir filesep 'InternalData' filesep 'paramSweepReturns.mat'], 'totalNumFrames','targetedVariance','targetedRs','randomRs','FDcutoffs','gevDVcutoffs', 'totalNumFramesRemaining', '-v7.3', '-nocompression');
-        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'paramSweepCompleted', '-append','-v7.3', '-nocompression');
-        disp('Parameter sweep completed')
-    else
-        load([workingDir filesep 'InternalData' filesep 'paramSweepReturns.mat']);
-        disp('Loaded paramSweepReturns.mat')
+
+
+    if(StopAfterPostProcessing)
+        warning('Stopping after post-processing and before parameter sweep.'); pause(1); drawnow;
+        return;
     end
-    
-    %% Max bias calculation
-    if ~(maxBiasCompleted && paramSweepCompleted)
-        maxBias = maxBiasCalculation(totalNumFramesRemaining,totalNumFrames,targetedRs,randomRs);
-        maxBiasCompleted = true;
-        save([workingDir filesep 'InternalData' filesep 'maxBias.mat'], 'maxBias', '-v7.3', '-nocompression');
-        save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'maxBiasCompleted', '-append','-v7.3','-nocompression'); %Always save current step AFTER saving data
-        disp('Max bias calculation completed')
-    else
-        load([workingDir filesep 'InternalData' filesep 'maxBias.mat']);
-        disp('Loaded maxBias.mat')
+
+    for useGSRiterator = 1:-1:0
+        parameterSweepFileName = [workingDir filesep 'InternalData' filesep 'paramSweep' '_-_GS' num2str(useGSRiterator) '.mat'];
+        paramSweepReturnsFileName = [workingDir filesep 'InternalData' filesep 'paramSweepReturns' '_-_GS' num2str(useGSRiterator) '.mat'];
+
+
+        maxBiasFileName = [workingDir filesep 'InternalData' filesep 'maxBias' '_-_GS' num2str(useGSRiterator) '.mat'];
+
+        outputsFileName = [workingDir filesep 'Outputs' filesep 'Outputs' '_-_GS' num2str(useGSRiterator) '.mat'];
+
+        useGSR = logical(useGSRiterator);
+
+        if (~useGSR)
+            paramSweepCompleted = paramSweepCompleted_noGSR;
+            maxBiasCompleted = maxBiasCompleted_noGSR;
+        else
+            paramSweepCompleted = paramSweepCompleted_withGSR;
+            maxBiasCompleted = maxBiasCompleted_withGSR;
+        end
+
+        paramSweepFilesExist = exist(parameterSweepFileName,'file') && exist(paramSweepReturnsFileName,'file');
+        maxBiasFilesExist = exist(maxBiasFileName,'file');
+        outputFilesExist = exist(outputsFileName,'file');
+
+        if (~paramSweepFilesExist)
+            paramSweepCompleted = false;
+        end
+
+        if(~paramSweepFilesExist || ~maxBiasFilesExist)
+            maxBiasCompleted = false;
+        end
+
+        %% Parameter sweep
+        if (~paramSweepCompleted) || (forceParamSweep)
+            if(forceParamSweep)
+                continueBool = false;
+            end
+            delete(gcp('nocreate'));
+            clusterParPool(numParamSweepWorkers);
+            if exist('combatstruct','var')
+                [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = ...
+                    mseParameterSweep(subjExtractedTimeSeries,useGSR,parameterSweepFileName, ...
+                    TR, continueBool, numOfSecToTrim, minSecDataNeeded,...
+                    numRunsDataNeededPerSubject,minSecDataNeededPerSubject,minNumContiguousDataSeconds, ...
+                    combatstruct);
+            else
+                [totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining] = ...
+                    mseParameterSweep(subjExtractedTimeSeries,useGSR,parameterSweepFileName, ...
+                    TR, continueBool, numOfSecToTrim, minSecDataNeeded,...
+                    numRunsDataNeededPerSubject,minSecDataNeededPerSubject,minNumContiguousDataSeconds);
+            end
+            save(paramSweepReturnsFileName, 'totalNumFrames','targetedVariance','targetedRs','randomRs','FDcutoffs','gevDVcutoffs', 'totalNumFramesRemaining', '-v7.3', '-nocompression');
+            if (~useGSR)
+                paramSweepCompleted_noGSR = true;
+                maxBiasCompleted_noGSR = false;
+            else
+                paramSweepCompleted_withGSR = true;
+                maxBiasCompleted_withGSR = false;
+            end
+            maxBiasCompleted = false;
+            save(currentStepFileName, 'paramSweepCompleted_noGSR','paramSweepCompleted_withGSR', '-append','-v7.3', '-nocompression');
+            disp('Parameter sweep completed')
+        else
+            load(paramSweepReturnsFileName);
+            disp('Loaded paramSweepReturns.mat')
+        end
+
+        %% Max bias calculation
+        if (~(maxBiasCompleted && paramSweepCompleted)) || (forceParamSweep)
+            delete(gcp('nocreate'));
+            clusterParPool(numParamSweepWorkers);
+            maxBias = maxBiasCalculation(totalNumFramesRemaining,totalNumFrames,targetedRs,randomRs);
+            save(maxBiasFileName, 'maxBias', '-v7.3', '-nocompression');
+            if (~useGSR)
+                maxBiasCompleted_noGSR = true;
+            else
+                maxBiasCompleted_withGSR = true;
+            end
+            save(currentStepFileName, 'maxBiasCompleted_noGSR','maxBiasCompleted_withGSR', '-append','-v7.3','-nocompression'); %Always save current step AFTER saving data
+            disp('Max bias calculation completed')
+        else
+            load(maxBiasFileName);
+            disp('Loaded maxBias.mat')
+        end
+
+        %% MSE calculation and MSE optimum
+        [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining,[workingDir filesep 'InternalData'],useGSR); %JCW 09/27/2023
+
+        disp('MSE calculation completed. saving outputs')
+
+        save(outputsFileName, 'optimalDV', 'optimalFD', 'optimalPCT', 'minMSE','-v7.3','-nocompression');
+        disp('outputs saved - returning')
     end
-    
-    %% MSE calculation and MSE optimum
-    [optimalDV, optimalFD, optimalPCT, minMSE] = mseCalculation(maxBias,totalNumFrames,targetedVariance,targetedRs,randomRs,FDcutoffs,gevDVcutoffs, totalNumFramesRemaining,[workingDir filesep 'InternalData']);
-    
-    disp('MSE calculation completed. saving outputs')
-    
-    save([workingDir filesep 'Outputs' filesep 'Outputs.mat'], 'optimalDV', 'optimalFD', 'optimalPCT', 'minMSE','-v7.3','-nocompression');
-    disp('outputs saved - returning')
-    
+    delete(gcp('nocreate'));
 end
 
 
