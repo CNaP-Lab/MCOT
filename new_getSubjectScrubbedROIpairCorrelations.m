@@ -36,6 +36,12 @@ function [averageRscr,averageRandomRscr,totalNumFramesRemaining,totalNumFrames, 
     else
         badVectorCell = cell(numRuns,1);
     end
+
+    if(~isfield(subjExtractedTimeSeries,'taskBlockData'))
+        taskBlockDataVec = [];
+    else
+        taskBlockDataVec = subjExtractedTimeSeries.taskBlockData;
+    end
     
     useGSR = logical(useGSR);
     
@@ -93,6 +99,7 @@ function [averageRscr,averageRandomRscr,totalNumFramesRemaining,totalNumFrames, 
                 FD(:,:,j),lpfFDcutoff, DV(:,:,j), lpfDVcutoff, useFDgev, useDVgev, ...
                 subjExtractedTimeSeries.TIPPfilters.filters.fA,subjExtractedTimeSeries.TIPPfilters.filters.fB,useGSR,numROIpairs, TR, numOfSecToTrim, minSecDataNeeded, ...
                 minNumContiguousDataSeconds, ...
+                taskBlockDataVec, ...
                 thisRunBadVector);
             runMeanFD(j) = nan; %mean(subjExtractedTimeSeries.FD(:,:,j));
             runMedianFD(j) = nan; %median(subjExtractedTimeSeries.FD(:,:,j));

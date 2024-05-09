@@ -48,12 +48,13 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
     continueBool = false;
     removeSubjIndexFromContinue = false;
     forceParamSweep = false;
+    StopAfterPostProcessing = false; %PNT edit: this is false unless you add it as a varargin
+    useTaskBlockDataVector = false;
     numArgIn = length(varargin);
     currentArgNumber = 1;
     while (currentArgNumber <= numArgIn)
         lowerStringCurrentArg = lower(string(varargin{currentArgNumber}));
         isNameValuePair = true;
-        StopAfterPostProcessing = false; %PNT edit: this is false unless you add it as a varargin
         switch(lowerStringCurrentArg)
             case lower("forceParamSweep")
                 forceParamSweep = varargin{currentArgNumber + 1};
@@ -116,6 +117,9 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
             case "removesubjindexfromcontinue"
                 removeSubjIndexFromContinue = true;
                 indexToRemoveSubj = varargin{currentArgNumber + 1};
+            case lower("taskBlockDataVector")
+                useTaskBlockDataVector = true;
+                taskBlockDataStructPath = varargin{currentArgNumber + 1};
             otherwise
                 error("Unrecognized input argument")
         end
@@ -267,7 +271,6 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
 
 
         %% SubjExtractedTimeSeries
-
         subjExtractedTimeSeries = subjExtractedTimeSeriesMaker(filenameMatrix, TR, nTrim, MPs, maskMatrix, workingDir, continueBool, filterCutoffs, subjIds);
         save([workingDir filesep 'InternalData' filesep 'currentStep.mat'], 'subjExtractedCompleted', '-append', '-v7.3', '-nocompression');
         disp('Filtering completed. ROI Time Series calculated.')
@@ -345,6 +348,60 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
 
         if(~paramSweepFilesExist || ~maxBiasFilesExist)
             maxBiasCompleted = false;
+        end
+
+        %% Optional: Add task on blocks struct to subjExtractedTimeSeries
+        if ( useTaskBlockDataVector )
+            subjTaskBlockData = load(taskBlockDataStructPath);
+            %taskBlockData has a struct array, taskOnBlockBySubj, 
+            % with the fields:
+            % subjID and taskOnVecsByRun
+            subjTaskBlockData = subjTaskBlockData.taskOnBlockBySubj; %Pull it out of the inner struct
+            numTaskBlockData = length(subjTaskBlockData);
+            numSubjExtractedTimeSeries = length(subjExtractedTimeSeries);
+            % in subjExtractedTimeSeries, subject IDs are subjId.
+            SETSsubjIDs = {subjExtractedTimeSeries.subjId};
+            taskOnBlockSubjIDs = {subjTaskBlockData.subjID};
+            [~,SETSlocs,~] = intersect(taskOnBlockSubjIDs,SETSsubjIDs);
+
+            %Make sure subject IDs match
+            if (numTaskBlockData ~= numSubjExtractedTimeSeries)
+                disp('fMRI Subject IDs:'); pause(eps); drawnow;
+                disp(SETSsubjIDs); pause(eps); drawnow;
+                disp('Task block Subject IDs:'); pause(eps); drawnow;
+                disp(taskOnBlockSubjIDs); pause(eps); drawnow;
+                error('Mismatch between number of items in task block data and number subjects in fMRI data.');
+            end
+            if(numel(SETSlocs) ~= numTaskBlockData)
+                disp('fMRI Subject IDs:'); pause(eps); drawnow;
+                disp(SETSsubjIDs); pause(eps); drawnow;
+                disp('Task block Subject IDs:'); pause(eps); drawnow;
+                disp(taskOnBlockSubjIDs); pause(eps); drawnow;
+                error('Mismatch in subject IDs between task block data and fMRI data');
+            end
+
+            %Sort task on blocks to match SETS
+            subjTaskBlockData = subjTaskBlockData(SETSlocs);
+            
+            %Load into SETS
+            for i = 1:numSubjExtractedTimeSeries
+                thisSubjTaskBlockDataMatrix = nan(size(subjExtractedTimeSeries(i).GS)); % frame x 1 x runs
+                thisSubjTaskBlockData = subjTaskBlockData(i);
+                numTaskBlockRuns = length(thisSubjTaskBlockData.taskOnVecsByRun);
+                for j = 1:numTaskBlockRuns
+                    thisRunTaskOnVecs = thisSubjTaskBlockData.taskOnVecsByRun(j);
+                    thisRunNum = thisRunTaskOnVecs.runNum;
+                    taskOnBlocksVectorLength = length(thisRunTaskOnVecs.taskOnBlocksVector);
+                    fMRInumFrames = subjExtractedTimeSeries(i).runLength(thisRunNum);
+                    if (taskOnBlocksVectorLength ~= fMRInumFrames)
+                        error('Mismatch between task on blocks vector and number of volumes in fMRI data.');
+                    end
+                    thisSubjTaskBlockDataMatrix(1:taskOnBlocksVectorLength,1,thisRunNum) = ...
+                        thisRunTaskOnVecs.taskOnBlocksVector();
+                end
+                subjExtractedTimeSeries(i).taskBlockData = thisSubjTaskBlockDataMatrix; % frame x 1 x runs
+            end
+
         end
 
         %% Parameter sweep

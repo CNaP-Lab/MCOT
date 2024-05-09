@@ -1,6 +1,7 @@
 function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,random_rscrMatrix] = ...
         new_FDDV_ScrubAndFilter(rts,fMPs,GS,WS,CS,FDvector,FDgevCutoff,DVvector,DVgevCutoff,useFDgev,useDVgev,fA,fB,useGSR,numROIpairs,TR, numOfSecToTrim, minSecDataNeeded, ...
         minNumContiguousDataSeconds, ...
+        taskBlockDataVec, ...
         varargin)
 
     numOfVolumesToTrim = ceil(numOfSecToTrim/TR);
@@ -56,8 +57,8 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
         end
         DVbadVector = (DVvector >= DVcutoff);
 
-        FDbadVector(rmvec) = false;
-        DVbadVector(rmvec) = false;
+        %FDbadVector(rmvec) = false;
+        %DVbadVector(rmvec) = false; %We do want to scrub high-motion volumes that will be removed after BPFing
         badVector = FDbadVector|DVbadVector;
     else
         %Disable targeted censoring methods
@@ -102,6 +103,18 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
     GSscr = GSscr - (Xdt*(Xdt\GSscr));
     WSscr = WSscr - (Xdt*(Xdt\WSscr));
     CSscr = CSscr - (Xdt*(Xdt\CSscr));
+
+    % If keeping only task on blocks, do that here
+    if(~isempty(taskBlockDataVec))
+        taskBlockDataVec(rmvec) = []; % align with data being processed already
+        %Remove
+        rtsSCR(taskBlockDataVec,:) = [];
+        GSscr(taskBlockDataVec) = [];
+        WSscr(taskBlockDataVec) = [];
+        CSscr(taskBlockDataVec) = [];
+        fMPs(taskBlockDataVec,:) = [];
+        badVector(taskBlockDataVec) = [];
+    end
 
 
     [rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames] = getROIpairCorrelations(rtsSCR,GSscr,WSscr,CSscr,fMPs,badVector,useGSR,numROIpairs,TR, minSecDataNeeded);
