@@ -35,7 +35,7 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
         FDvector = FDvector(validTimePoints);
         DVvector = DVvector(validTimePoints);
         if(~isempty(taskBlockDataVec))
-            taskBlockDataVec = taskBlockDataVec(validTimePoints);
+            taskBlockDataVec = logical(taskBlockDataVec(validTimePoints));
         end
     end
     fMPs = squeeze(fMPs);
@@ -97,8 +97,6 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
     WSscr(rmvec) = [];
     CSscr(rmvec) = [];
     fMPs(rmvec,:) = [];
-    badVectorTemp = badVector;
-    badVectorTemp(rmvec) = [];
     badVector(rmvec) = [];
 
     %%%linear detrend and mean center
@@ -113,16 +111,18 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
     if(~isempty(taskBlockDataVec))
         taskBlockDataVec(rmvec) = []; % align with data being processed already
         %Remove
-        rtsSCR(~logical(taskBlockDataVec),:) = [];
-        GSscr(~logical(taskBlockDataVec)) = [];
-        WSscr(~logical(taskBlockDataVec)) = [];
-        CSscr(~logical(taskBlockDataVec)) = [];
-        fMPs(~logical(taskBlockDataVec),:) = [];
-        badVector(~logical(taskBlockDataVec)) = [];
+        rtsSCR(~taskBlockDataVec,:) = [];
+        GSscr(~taskBlockDataVec) = [];
+        WSscr(~taskBlockDataVec) = [];
+        CSscr(~taskBlockDataVec) = [];
+        fMPs(~taskBlockDataVec,:) = [];
+        badVectorAllBlocks = badVector;
+        badVector(~taskBlockDataVec) = [];
     end
 
 
-    [rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames] = getROIpairCorrelations(rtsSCR,GSscr,WSscr,CSscr,fMPs,badVector,useGSR,numROIpairs,TR, minSecDataNeeded);
+    [rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames] = ... 
+        getROIpairCorrelations(rtsSCR,GSscr,WSscr,CSscr,fMPs,badVector,useGSR,numROIpairs,TR, minSecDataNeeded);
 
     noDataLeft = all(isnan(rscr(:)));
     if (~noDataLeft)
@@ -133,13 +133,13 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
             % before removing task-off blocks)
             if (~isempty(taskBlockDataVec))
                 % permute
-                permutedTaskOnBlocks = randPermContiguous(badVectorTemp(logical(taskBlockDataVec))); %this should permute only the task-On blocks
-                badVectorTemp(logical(taskBlockDataVec)) = permutedTaskOnBlocks; %replace permuted indices in badVectorTemp
+                permutedTaskOnBlocks = randPermContiguous(badVector); %this should permute only the task-On blocks
+                badVectorAllBlocks(taskBlockDataVec) = permutedTaskOnBlocks; %replace permuted indices in badVectorTemp
                 % put the permuted Task-on block badVector in the
                 % randomBadVector
-                randomBadVector = [zeros(numOfVolumesToTrim,1); badVectorTemp; zeros(numOfVolumesToTrim,1)];
+                randomBadVector = [zeros(numOfVolumesToTrim,1); badVectorAllBlocks; zeros(numOfVolumesToTrim,1)];
             else
-                randomBadVector = [zeros(numOfVolumesToTrim,1);randPermContiguous(badVector);zeros(numOfVolumesToTrim,1)];
+                randomBadVector = [zeros(numOfVolumesToTrim,1); randPermContiguous(badVector); zeros(numOfVolumesToTrim,1)];
             end
 
             randomBadVector(isnan(GS)|isnan(WS)|isnan(CS)) = true;
@@ -165,19 +165,6 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
             CS_randomSCR(rmvec) = [];
             randomBadVector(rmvec) = [];
             
-            % now remove Task-off Blocks from random data
-            if(~isempty(taskBlockDataVec))
-                %Remove
-                GS_randomSCR(~logical(taskBlockDataVec)) = [];
-                WS_randomSCR(~logical(taskBlockDataVec)) = [];
-                CS_randomSCR(~logical(taskBlockDataVec)) = [];
-                randomBadVector(~logical(taskBlockDataVec)) = [];
-                rts_randomSCR(~logical(taskBlockDataVec),:) = [];
-            end
-            
-
-            
-
             %%%linear detrend and mean center
             intcpt = ones(size(rts_randomSCR,1),1);
             Xdt = [intcpt (1:size(rts_randomSCR,1))'./size(rts_randomSCR,1)];
@@ -190,6 +177,16 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
             %         GS_randomSCRmatrix(:,:,j) = GS_randomSCR;
             %         WS_randomSCRmatrix(:,:,j) = WS_randomSCR;
             %         CS_randomSCRmatrix(:,:,j) = CS_randomSCR;
+            
+            % now remove Task-off Blocks from random data
+            if(~isempty(taskBlockDataVec))
+                %Remove
+                GS_randomSCR(~taskBlockDataVec) = [];
+                WS_randomSCR(~taskBlockDataVec) = [];
+                CS_randomSCR(~taskBlockDataVec) = [];
+                randomBadVector(~taskBlockDataVec) = [];
+                rts_randomSCR(~taskBlockDataVec,:) = [];
+            end
 
             random_rscrMatrix(:,j) = getROIpairCorrelations(rts_randomSCR,GS_randomSCR,WS_randomSCR,CS_randomSCR,fMPs,randomBadVector,useGSR,numROIpairs,TR, minSecDataNeeded);
         end
