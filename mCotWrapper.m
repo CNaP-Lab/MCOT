@@ -119,7 +119,8 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
                 indexToRemoveSubj = varargin{currentArgNumber + 1};
             case lower("taskBlockDataVector")
                 useTaskBlockDataVector = true;
-                taskBlockDataStructPath = varargin{currentArgNumber + 1};
+                % struct variable provided
+                taskBlockDataStruct = varargin{currentArgNumber + 1};
             otherwise
                 error("Unrecognized input argument")
         end
@@ -352,11 +353,11 @@ function [optimalDV, optimalFD, optimalPCT, minMSE] = mCotWrapper(workingDir, va
 
         %% Optional: Add task on blocks struct to subjExtractedTimeSeries
         if ( useTaskBlockDataVector )
-            subjTaskBlockData = load(taskBlockDataStructPath);
+            subjTaskBlockData = taskBlockDataStruct;
             %taskBlockData has a struct array, taskOnBlockBySubj, 
             % with the fields:
             % subjID and taskOnVecsByRun
-            subjTaskBlockData = subjTaskBlockData.taskOnBlockBySubj; %Pull it out of the inner struct
+            %subjTaskBlockData = subjTaskBlockData.taskOnBlockBySubj; %Pull it out of the inner struct
             numTaskBlockData = length(subjTaskBlockData);
             numSubjExtractedTimeSeries = length(subjExtractedTimeSeries);
             % in subjExtractedTimeSeries, subject IDs are subjId.

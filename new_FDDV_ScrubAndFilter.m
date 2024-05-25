@@ -34,6 +34,9 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
         CS = CS(validTimePoints);
         FDvector = FDvector(validTimePoints);
         DVvector = DVvector(validTimePoints);
+        if(~isempty(taskBlockDataVec))
+            taskBlockDataVec = taskBlockDataVec(validTimePoints);
+        end
     end
     fMPs = squeeze(fMPs);
     GS = squeeze(GS);
@@ -94,6 +97,8 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
     WSscr(rmvec) = [];
     CSscr(rmvec) = [];
     fMPs(rmvec,:) = [];
+    badVectorTemp = badVector;
+    badVectorTemp(rmvec) = [];
     badVector(rmvec) = [];
 
     %%%linear detrend and mean center
@@ -108,12 +113,12 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
     if(~isempty(taskBlockDataVec))
         taskBlockDataVec(rmvec) = []; % align with data being processed already
         %Remove
-        rtsSCR(taskBlockDataVec,:) = [];
-        GSscr(taskBlockDataVec) = [];
-        WSscr(taskBlockDataVec) = [];
-        CSscr(taskBlockDataVec) = [];
-        fMPs(taskBlockDataVec,:) = [];
-        badVector(taskBlockDataVec) = [];
+        rtsSCR(~logical(taskBlockDataVec),:) = [];
+        GSscr(~logical(taskBlockDataVec)) = [];
+        WSscr(~logical(taskBlockDataVec)) = [];
+        CSscr(~logical(taskBlockDataVec)) = [];
+        fMPs(~logical(taskBlockDataVec),:) = [];
+        badVector(~logical(taskBlockDataVec)) = [];
     end
 
 
@@ -122,7 +127,20 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
     noDataLeft = all(isnan(rscr(:)));
     if (~noDataLeft)
         for j=1:numRandomTimeSeries
-            randomBadVector = [zeros(numOfVolumesToTrim,1);randPermContiguous(badVector);zeros(numOfVolumesToTrim,1)];
+            % edit by PNT: do something with badVector here to permute only
+            % the bad volumes that fall inside the task on blocks
+            % start with badVectorTemp (badVector after removing rmvec but
+            % before removing task-off blocks)
+            if (~isempty(taskBlockDataVec))
+                % permute
+                permutedTaskOnBlocks = randPermContiguous(badVectorTemp(logical(taskBlockDataVec))); %this should permute only the task-On blocks
+                badVectorTemp(logical(taskBlockDataVec)) = permutedTaskOnBlocks; %replace permuted indices in badVectorTemp
+                % put the permuted Task-on block badVector in the
+                % randomBadVector
+                randomBadVector = [zeros(numOfVolumesToTrim,1); badVectorTemp; zeros(numOfVolumesToTrim,1)];
+            else
+                randomBadVector = [zeros(numOfVolumesToTrim,1);randPermContiguous(badVector);zeros(numOfVolumesToTrim,1)];
+            end
 
             randomBadVector(isnan(GS)|isnan(WS)|isnan(CS)) = true;
             GS_randomSCR  = filtfilt(fB,fA,tsInterp(GS,randomBadVector));
@@ -146,8 +164,19 @@ function [rscr,random_Rscr,numFramesRemaining,numFramesScrubbed,totalNumFrames,r
             WS_randomSCR(rmvec) = [];
             CS_randomSCR(rmvec) = [];
             randomBadVector(rmvec) = [];
+            
+            % now remove Task-off Blocks from random data
+            if(~isempty(taskBlockDataVec))
+                %Remove
+                GS_randomSCR(~logical(taskBlockDataVec)) = [];
+                WS_randomSCR(~logical(taskBlockDataVec)) = [];
+                CS_randomSCR(~logical(taskBlockDataVec)) = [];
+                randomBadVector(~logical(taskBlockDataVec)) = [];
+                rts_randomSCR(~logical(taskBlockDataVec),:) = [];
+            end
+            
 
-            %rts_randomSCR(rmvec,:) = [];
+            
 
             %%%linear detrend and mean center
             intcpt = ones(size(rts_randomSCR,1),1);

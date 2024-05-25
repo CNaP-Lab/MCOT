@@ -20,7 +20,8 @@ function [targetedSubjRinROIpair,randomSubjRinROIpair,totalNumFramesRemaining,to
         = deal(nan(numSubjects,1));
     
     pause(eps); drawnow;
-    parfor subjectNumber = 1:numSubjects
+    % replace parfor here
+    for subjectNumber = 1:numSubjects
         [thisSubjRscr,thisSubjRandomRscr,totalNumFramesRemaining(subjectNumber),totalNumFrames(subjectNumber), ...
             subjHarmMeanFrames(subjectNumber),subjMeanSamplingVar(subjectNumber),subjNumRuns(subjectNumber), ...
             subjRunsVar(subjectNumber),subjMeanRunsNoSamplingVar(subjectNumber),subjHarmMeanFramesMinus3(subjectNumber)] = ...
